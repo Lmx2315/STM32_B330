@@ -182,6 +182,8 @@ u32 TIME_TEST=0;
 u32 ID_CMD=0;						//переменная хранить текущий ID наших квитанций 
 
 u8 PWR_CHANNEL=255;
+
+u8 LM_ID_CN[8];
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -577,7 +579,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 1500000;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1333,6 +1335,13 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
+
+if (strcmp(Word,"BatPG")==0) //
+   {
+      u_out ("принял BatPG:",0); 
+	  crc_comp=DS4520_read();
+	  u_out("POWER_GOOD:",crc_comp);
+   } else		
 if (strcmp(Word,"time")==0) //
    {
 	  crc_comp =atoi  (DATA_Word); 
@@ -1409,30 +1418,40 @@ if (strcmp(Word,"MSG")==0) //
    } else	
  if (strcmp(Word,"lm")==0) //
    {
-	  crc_comp =atoi  (DATA_Word); 
-      u_out ("принял lm:",crc_comp); 
-      LM_MFR_MODEL(crc_comp);
-	  LM_in_p (crc_comp);
-	  LM_in_i (crc_comp);
-	  LM_aux_u(crc_comp);
+	  crc_input =atoi  (DATA_Word); 
+      u_out ("принял lm:",crc_input); 
+      LM_MFR_MODEL(crc_input); //если есть ответ i2c - будет выводить данные!!!
+	  /*
+	  crc_comp=LM_in_p (crc_input);
+	  u_out("p=",crc_comp);
+	  crc_comp=LM_in_i (crc_input);
+	  u_out("i=",crc_comp);
+	  crc_comp=LM_aux_u(crc_input);
+	  u_out("u=",crc_comp);
+	  */
    } else
 if (strcmp(Word,"lm_ID")==0) //
    {
 	  crc_comp =atoi  (DATA_Word); 
       u_out ("принял lm_ID:",crc_comp); 
       LM_MFR_ID(crc_comp);
+	  x_out("0:",LM_ID_CN[0]);
+	  x_out("1:",LM_ID_CN[1]);
+	  x_out("2:",LM_ID_CN[2]);
    } else
  if (strcmp(Word,"lm_temp")==0) //
    {
 	  crc_comp =atoi  (DATA_Word); 
       u_out ("принял lm_temp:",crc_comp); 
-      LM_TEMP(crc_comp);
+	  crc_comp=LM_TEMP(crc_input);
+      u_out("temp:",crc_comp);
    } else	
  if (strcmp(Word,"lm_v")==0) //
    {
 	  crc_comp =atoi  (DATA_Word); 
-      u_out ("принял lm_v:",crc_comp); 
-      LM_v(crc_comp);
+      u_out ("принял lm_v:",crc_comp);       
+	  crc_comp=LM_v(crc_input);;
+      u_out("v:",crc_comp);
    } else	   
  if (strcmp(Word,"pwr_072")==0) //
    {
@@ -1941,6 +1960,30 @@ u8 PWR_072 (u8 z)
 	return state;
 }
 
+u8 DS4520_read (void)  //проверяем состояние входа расширителя - 15 нога расширителя DD10 (8порт)  - сигнал POWERGOOD от конденсаторов
+{
+	uint16_t DevAddress=0x53;//адрес DD10 ds4520
+	 u8  c[1]; 
+	 u8  a[2];
+	 uint8_t state=0;
+	 uint8_t v=0;
+	 u32 error=0;
+	
+	HAL_I2C_Init(&hi2c1);	
+
+	c[0] =   0xf9;  //команда-чтение I/O Status 1 
+	
+	state  = HAL_I2C_IsDeviceReady  (&hi2c1,(DevAddress<<1),1,  1000);
+if (!state)  
+	{
+		HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,1,1);
+	}
+	
+	HAL_I2C_DeInit(&hi2c1);	
+	v=a[0]&0x01;	
+	return v;
+}
+
 
 
 u8 LM_MFR_MODEL (u8 z)
@@ -1985,7 +2028,7 @@ u8 LM_MFR_MODEL (u8 z)
 	return state;
 }
 
-u8 LM_ID_CN[8];
+
 
 u8 LM_MFR_ID (u8 z)
 {
@@ -3001,13 +3044,14 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			u_out("START_BP:",START_BP);
 		}
 		
-		if (id->CMD_TYPE[i]==CMD_CH_UP)//команда включения канала питания
+		if (id->CMD_TYPE[i]==CMD_CH_UP)//команда включения канала питания, исправить длинну данных команды!!!
 		{
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
+		//--------------Убрать в соответствии с протоколом из ТО на РЭС!!!!-----------------
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
 			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
-			
+		//----------------------------------------------------------------------------------	
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			PWR_072 (data);//выполняем команду

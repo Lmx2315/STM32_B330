@@ -506,7 +506,7 @@ u32 ADR_FINDER (u64 ,ADR_SENDER *); //ищем адрес отправителя
 void Set_network(void);
 void MSG_SHOW (void);
 u32 SEND_UDP_MSG (void);
-
+u8 DS4520_read (void);
 
 u32 ERROR_CMD_MSG	//формирует структуру квитанции уровня CMD
 (
