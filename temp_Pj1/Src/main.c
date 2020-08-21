@@ -1864,7 +1864,8 @@ void BP_start (u16 a)
 	
 	if ((a==0)&&(step==0))
 	{
-		PWM (0);
+		PWR_072 (255);//выключаем каналы питания и сбрасываем состояния переменных говорящих о каналах питания - в ноль
+		PWM (0);		
 	} 
 	
 	
@@ -3012,7 +3013,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			//квитанция о состоянии питания каналов
 			D_TEMP[0]=0;
 			D_TEMP[1]=0;
-			D_TEMP[2]=0;
+			D_TEMP[2]=START_BP;
 			D_TEMP[3]=PWR_CHANNEL;
 	//		u_out("PWR:",PWR_CHANNEL);
 			SYS_CMD_MSG(
@@ -3107,7 +3108,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	    //текущее системное время 
 			);	
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			u_out("включаем канал:",data);
+			u_out("управляем питание каналов:",data);
 		}
 		
 	//	if (id->TIME<TIME_SYS)
