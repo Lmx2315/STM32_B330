@@ -716,7 +716,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB12 PB9 */
-  GPIO_InitStruct.Pin   = GPIO_PIN_12|GPIO_PIN_9;
+  GPIO_InitStruct.Pin   = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_9;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -746,7 +746,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   
     /*Configure GPIO pin :  */
-  GPIO_InitStruct.Pin  = GPIO_PIN_5;
+  GPIO_InitStruct.Pin  = GPIO_PIN_5|GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -933,7 +933,7 @@ unsigned int leng ( char *s)
   return i;
 }
 
-void Transf(char* s)  // процедура отправки строки символов в порт
+void Transf(const char* s)  // процедура отправки строки символов в порт
 {
   u32 l=0;
   u32 i=0;
@@ -1336,6 +1336,46 @@ if (packet_ok==1u)
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
 
+	if (strcmp(Word,"JTAG_TST")==0)                     
+   {
+	 crc_comp =atoi(DATA_Word);
+     Transf ("принял JTAG_TST\r"    );
+     Transf("\r"); 
+	 TST ();
+   } else	
+if (strcmp(Word,"JTAG2_SCAN")==0)                     
+   {
+	 crc_comp =atoi(DATA_Word);
+     Transf ("принял JTAG_SCAN\r"    );
+     Transf("\r"); 
+	 //--------------------
+		 u8 list[2]; //массив длин IR регистров - их число должно быть по числу устройств на шине 
+			list[0]=10;
+			list[1]=10;
+			list[2]=10;
+			list[3]=10;
+			list[4]=10;
+			list[5]=10;
+			list[6]=10;
+			list[7]=10;
+			list[1]=0;
+//	 crc_comp=jtag_scan(list,crc_comp); 
+	 crc_comp=jtag_scan(NULL,crc_comp); 
+   } else
+if (strcmp(Word,"JTAG1_SCAN")==0)                     
+   {
+	 crc_comp =atoi(DATA_Word);
+     Transf ("принял JTAG_SCAN\r"    );
+     Transf("\r"); 
+     JTAG_SCAN();
+   } else
+if (strcmp(Word,"JTAG_ID")==0)                     
+   {
+	 crc_comp =atoi(DATA_Word);
+     Transf ("принял JTAG_ID\r"    );
+     Transf("\r");  
+     ID_recive (crc_comp);
+   } else		 
 if (strcmp(Word,"BatPG")==0) //
    {
       u_out ("принял BatPG:",0); 
@@ -2974,7 +3014,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			D_TEMP[1]=0;
 			D_TEMP[2]=0;
 			D_TEMP[3]=PWR_CHANNEL;
-			u_out("PWR:",PWR_CHANNEL);
+	//		u_out("PWR:",PWR_CHANNEL);
 			SYS_CMD_MSG(
 			id,//реестр
 			&INVOICE[ADR], 	//структура квитанций	
@@ -2988,7 +3028,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 			
 //			Transf("Запрос состояния!\r\n");	
-			un_out("[",TIME_SYS);Transf("]\r\n");
+//			un_out("[",TIME_SYS);Transf("]\r\n");
 		}	
 		
 		if (id->CMD_TYPE[i]==CMD_LED)//команда управления светодиодами на лицевой панели

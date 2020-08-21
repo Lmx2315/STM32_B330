@@ -22,100 +22,22 @@ Dialog DLL:      TCM.DLL V1.14.4.0
  
 <h2>Project:</h2>
 C:\Work_murmansk\STM32_K330\STM32_B330\temp_Pj1\MDK-ARM\temp_Pj1.uvprojx
-Project File Date:  12/19/2019
+Project File Date:  08/20/2020
 
 <h2>Output:</h2>
 Build target 'temp_Pj1'
-compiling main.c...
-../Src/main.c(1080): warning:  #181-D: argument is incompatible with corresponding format string conversion
-     sprintf (strng,"%u",z);
-../Src/main.c(1082): warning:  #181-D: argument is incompatible with corresponding format string conversion
-     sprintf (strng,"%u",a);
-../Src/main.c(1089): warning:  #177-D: variable "k" was declared but never referenced
-   uint16_t k;
-../Src/main.c(1768): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 0] = ((float)adcBuffer[0])*3.3/4096*2;
-../Src/main.c(1769): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 1] = ((float)adcBuffer[1])*3.3/4096*2;
-../Src/main.c(1770): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 2] = ((float)adcBuffer[2])*3.3*5.71428/4096;//12 Вольт делитель 47к-10к
-../Src/main.c(1771): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 3] = ((float)adcBuffer[3])*3.3/4096*2;
-../Src/main.c(1772): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 4] = ((float)adcBuffer[4])*3.3/4096;
-../Src/main.c(1930): warning:  #550-D: variable "error" was set but never used
-         u32 error=0;
-../Src/main.c(1979): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-                HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,1,1);
-../Src/main.c(1970): warning:  #177-D: variable "error" was declared but never referenced
-         u32 error=0;
-../Src/main.c(2014): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-                HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size2,1);
-../Src/main.c(2060): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-         error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size2,1);
-../Src/main.c(2039): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2120): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-                error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2090): warning:  #177-D: variable "state" was declared but never referenced
-         uint8_t state=1;
-../Src/main.c(2091): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2199): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-                error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2169): warning:  #177-D: variable "state" was declared but never referenced
-         uint8_t state=1;
-../Src/main.c(2170): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2268): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-        error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2243): warning:  #177-D: variable "state" was declared but never referenced
-         uint8_t state=1;
-../Src/main.c(2244): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2322): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-        error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2297): warning:  #177-D: variable "state" was declared but never referenced
-         uint8_t state=1;
-../Src/main.c(2298): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2376): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
-        error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2351): warning:  #177-D: variable "state" was declared but never referenced
-         uint8_t state=1;
-../Src/main.c(2352): warning:  #177-D: variable "v" was declared but never referenced
-         uint8_t v=0;
-../Src/main.c(2426): warning:  #177-D: variable "D" was declared but never referenced
-        u8 D[4];
-../Src/main.c(3162): warning:  #223-D: function "RECEIVE_udp" declared implicitly
-   RECEIVE_udp (0, 3001,1);
-../Src/main.c(419): warning:  #177-D: function "MX_SPI2_Init" was declared but never referenced
-  static void MX_SPI2_Init(void)
-../Src/main.c(457): warning:  #177-D: function "MX_SPI3_Init" was declared but never referenced
-  static void MX_SPI3_Init(void)
-../Src/main.c(604): warning:  #177-D: function "MX_USART2_UART_Init" was declared but never referenced
-  static void MX_USART2_UART_Init(void)
-../Src/main.c(638): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
-  static void MX_USART6_UART_Init(void)
-../Src/main.c: 35 warnings, 0 errors
-compiling stm32f4xx_it.c...
-compiling stm32f4xx_hal_msp.c...
-compiling W5200.c...
-..\Src\W5200.c(1816): warning:  #177-D: variable "RSR_len" was declared but never referenced
-         int16 RSR_len;
-..\Src\W5200.c(1817): warning:  #177-D: variable "received_len" was declared but never referenced
-      uint16 received_len;
-..\Src\W5200.c(1818): warning:  #177-D: variable "lsr" was declared but never referenced
-        uint32 lsr=0;
-..\Src\W5200.c(2265): warning:  #940-D: missing return statement at end of non-void function "SEND_UDP_MSG"
-  }
-..\Src\W5200.c(2255): warning:  #550-D: variable "error" was set but never used
-        u32 error=0;
-..\Src\W5200.c: 5 warnings, 0 errors
+compiling jtag_scan.c...
+..\Src\jtag_scan.c(198): warning:  #68-D: integer conversion resulted in a change of sign
+                                jtag_devs[i].current_ir = -1;
+..\Src\jtag_scan.c(58): warning:  #177-D: variable "z" was declared but never referenced
+        uint16_t z=0;
+..\Src\jtag_scan.c(226): warning:  #68-D: integer conversion resulted in a change of sign
+                jtag_devs[i].current_ir = -1;
+..\Src\jtag_scan.c: 3 warnings, 0 errors
 linking...
-Program Size: Code=37928 RO-data=1000 RW-data=272 ZI-data=34448  
+Program Size: Code=41704 RO-data=1960 RW-data=276 ZI-data=35132  
 FromELF: creating hex file...
-".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 40 Warning(s).
+".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 3 Warning(s).
 
 <h2>Software Packages used:</h2>
 

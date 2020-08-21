@@ -129,6 +129,15 @@ typedef unsigned long uint32;
 #define PB10_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10,GPIO_PIN_RESET)
 #define PB10_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10,GPIO_PIN_SET)
 
+#define PB12_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_RESET)
+#define PB12_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_SET)
+
+#define PB13_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13,GPIO_PIN_RESET)
+#define PB13_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13,GPIO_PIN_SET)
+
+#define PB15_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,GPIO_PIN_RESET)
+#define PB15_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,GPIO_PIN_SET)
+
 #define PC13_0  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_RESET)
 #define PC13_1  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13,GPIO_PIN_SET)
 
@@ -280,7 +289,27 @@ typedef unsigned long uint32;
 
 #define NSS_4(a)        ((a==1)?PE4_1 : PE4_0)
 
+//------------------------------------------------
+//                 JTAG
 
+#define TDO()  HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14)
+#define TDI(a) 	((a==1)?PB15_1 : PB15_0)
+#define TCK(a) 	((a==1)?PB13_1 : PB13_0)
+#define TMS(a) 	((a==1)?PB12_1 : PB12_0)
+
+#define ALIGN(x, n) (((x) + (n) - 1) & ~((n) - 1))
+#undef MIN
+#define MIN(x, y)  (((x) < (y)) ? (x) : (y))
+#undef MAX
+#define MAX(x, y)  (((x) > (y)) ? (x) : (y))
+
+//typedef unsigned int bool;
+
+
+#define ssize_t long
+#define mode_t unsigned int
+
+//------------------------------------------------
 
 #define u64 unsigned long long
 #define u32 unsigned int
@@ -449,7 +478,7 @@ typedef struct   //структура команды на исполнение
 typedef struct
 {
 	u32 IDX;				//подсчитанное количество отправителей
-	u64 A[quantity_SENDER];	//масств адресов ОТПРАВИТЕЛЕЙ	
+	u64 A[quantity_SENDER];	//масств адресов ОТПРАВ� ТЕЛЕЙ	
 }ADR_SENDER;
 
 //---------------------------
@@ -487,7 +516,7 @@ void un_out (char *,u32);
 void u_out (char *,u32);
 void d_out (char *,int);
 void f_out (char *,float);
-void Transf(char* );
+void Transf(const char* );
 unsigned int leng ( char *);
 void itoa(int ,  char *, int);
 volatile void delay_us( uint32_t );
@@ -507,6 +536,13 @@ void Set_network(void);
 void MSG_SHOW (void);
 u32 SEND_UDP_MSG (void);
 u8 DS4520_read (void);
+
+//-------------JTAG--------------
+void JTAG_SCAN (void);
+u8 SCAN_N (void);
+void ID_recive (u8 );
+//-------------------------------
+
 
 u32 ERROR_CMD_MSG	//формирует структуру квитанции уровня CMD
 (

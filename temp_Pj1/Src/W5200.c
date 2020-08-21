@@ -533,7 +533,7 @@ void spi_cs_SPI(u8 );
  u8 SPI(u8 );
 void Synhron_section (void);
 char TCP_txchar(void);
-void Transf(char *);
+void Transf(const char *);
 void u_out (char s[],u32 a);
 void UART_control (void);
 void UART_DMA_TX  (void);
@@ -2130,7 +2130,7 @@ void SERV_ID_DEL (ID_SERVER *id,u32 idx) //процедура удаления команды из реестра
 	id->SENDER_ID[idx] =0xffffffff;
 	id->TIME	 [idx] =0xffffffff;
 	id->N_sch--;
-	u_out("удаляем команду из реестра:",idx);
+//	u_out("удаляем команду из реестра:",idx);
 }
 
 void STATUS_ID (ID_SERVER *id)
