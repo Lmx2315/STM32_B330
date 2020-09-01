@@ -1148,7 +1148,7 @@ u8 spisend8 (u8 d) //8 бит
   return b; 
 }
   
-  
+/*  
 u64 FPGA_rSPI (u8 size,u8 adr)
 {
    u64 d[8];
@@ -1176,6 +1176,39 @@ u64 FPGA_rSPI (u8 size,u8 adr)
 
    return value;
 }
+*/
+
+u64 FPGA_rSPI (u8 size,u8 adr)
+{
+   u64 d[8];
+   u8 i,k;
+   u8 adr_a=0;
+   u64 value;
+   
+   k=size/8;
+   adr_a=adr;
+  
+   CS_5_MK(0);
+//   delay_us(1);
+ 
+   spi5send8 (adr_a); //
+   for (i=0;i<(size/8);i++) d[i] = spi5send8 (0);  //считываем данные
+//   delay_us(1);  
+   CS_5_MK(1);
+   
+   if (k==1) value =   d[0];
+   if (k==2) value =  (d[0]<< 8)+ d[1];
+   if (k==3) value =  (d[0]<<16)+(d[1]<< 8)+ d[2];
+   if (k==4) value =  (d[0]<<24)+(d[1]<<16)+(d[2]<< 8)+ d[3];
+   if (k==5) value =  (d[0]<<32)+(d[1]<<24)+(d[2]<<16)+(d[3]<< 8)+ d[4];
+   if (k==6) value =  (d[0]<<40)+(d[1]<<32)+(d[2]<<24)+(d[3]<<16)+(d[4]<< 8)+ d[5];
+   if (k==7) value =  (d[0]<<48)+(d[1]<<40)+(d[2]<<32)+(d[3]<<24)+(d[4]<<16)+(d[5]<< 8)+ d[6];
+   if (k==8) value =  (d[0]<<56)+(d[1]<<48)+(d[2]<<40)+(d[3]<<32)+(d[4]<<24)+(d[5]<<16)+(d[6]<<8)+d[7];
+
+   return value;
+}
+
+
 //-----------------------------------------------------------------
 //             тестовый вывод "Хранилища"
 void PRINT_SERV (void)
@@ -1336,7 +1369,12 @@ if (packet_ok==1u)
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
 
-	if (strcmp(Word,"JTAG_TST")==0)                     
+ if (strcmp(Word,"spi_read0")==0) //
+   {	
+	crc_comp=FPGA_rSPI (32,30);
+	x_out("CODE FPGA:",crc_comp);
+   } else	
+if (strcmp(Word,"JTAG_TST")==0)                     
    {
 	 crc_comp =atoi(DATA_Word);
      Transf ("принял JTAG_TST\r"    );
@@ -3168,7 +3206,7 @@ int main(void)
   Transf("-------------\r\n");
   Transf("    Б330\r\n");
   Transf("-------------\r\n");
-  
+  DE_RS485(0);
   PWDN_4(1);
   
   ENABLE_LM25056_MK(0);//enable 
