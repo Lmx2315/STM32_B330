@@ -548,7 +548,7 @@ static void MX_SPI5_Init(void)
   hspi5.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi5.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi5.Init.NSS = SPI_NSS_SOFT;
-  hspi5.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi5.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi5.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi5.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi5.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -1192,7 +1192,7 @@ u64 FPGA_rSPI (u8 size,u8 adr)
 //   delay_us(1);
  
    spi5send8 (adr_a); //
-   for (i=0;i<(size/8);i++) d[i] = spi5send8 (0);  //считываем данные
+   for (i=0;i<(size/8);i++) d[i] = spi5send8 (0x00);  //считываем данные
 //   delay_us(1);  
    CS_5_MK(1);
    
@@ -1208,7 +1208,70 @@ u64 FPGA_rSPI (u8 size,u8 adr)
    return value;
 }
 
+u32 FPGA_wSPI (u8 size,u8 adr,u64 data)
+{
+   u8 d[8];
+   u8 i,k;
+   
+   k=size/8;
+    
+   if (k==1)  d[3]=data;
+   
+   if (k==2) {d[2]=data;
+        d[3]=data>>8;
+        }
+        
+   if (k==3) {d[1]=data;
+        d[2]=data>>8;
+        d[3]=data>>16;
+        }
+		
+   if (k==4) {d[0]=data;
+        d[1]=data>>8;
+        d[2]=data>>16;
+        d[3]=data>>24;
+        }
+		
+   if (k==5) {d[0]=data;
+        d[1]=data>>8;
+        d[2]=data>>16;
+        d[3]=data>>24;
+		d[4]=data>>32;
+        }
+		
+	if (k==6) {d[0]=data;
+        d[1]=data>>8;
+        d[2]=data>>16;
+        d[3]=data>>24;
+		d[4]=data>>32;
+		d[5]=data>>40;
+        }
+	if (k==7) {d[0]=data;
+        d[1]=data>>8;
+        d[2]=data>>16;
+        d[3]=data>>24;
+		d[4]=data>>32;
+		d[5]=data>>40;
+		d[6]=data>>48;
+        }
+	if (k==8) {d[0]=data;
+        d[1]=data>>8;
+        d[2]=data>>16;
+        d[3]=data>>24;
+		d[4]=data>>32;
+		d[5]=data>>40;
+		d[6]=data>>48;
+		d[7]=data>>56;
+        }
+  
+   CS_5_MK(0);
+   spi5send8 (adr|0x80); //передаём адресс
+   k--;
+   for (i=0;i<(size/8);i++) spi5send8 (d[k-i]); //пишем данные
+   CS_5_MK(1);
 
+   return 0;
+}  
 //-----------------------------------------------------------------
 //             тестовый вывод "Хранилища"
 void PRINT_SERV (void)
@@ -1358,8 +1421,7 @@ u32 IO ( char* str)      // функция обработки протокола обмена
 		if (indexZ <BUFFER_SR)  indexZ ++;
 		i--;
 		FLAG_CW=0u;	
-  }
- 
+  } 
 
 if (packet_ok==1u) 
   {    
@@ -1368,12 +1430,28 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
-
- if (strcmp(Word,"spi_read0")==0) //
+ if (strcmp(Word,"spi_write")==0) // ~0 spi_write:adr.code;
+   {
+	 crc_comp =atoi(DATA_Word);	//первое число - адресс касеты на бекплейне
+ 	 crc_input=atoi(DATA_Word2);//записываемый 32-битный код 
+	 crc_comp=(crc_comp<<4)|0x2;
+	 FPGA_wSPI (32,crc_comp,crc_input);
+	 Transf("принял FPGA spi_write\r\n");
+   } else
+ if (strcmp(Word,"spi_read")==0) //
    {	
-	crc_comp=FPGA_rSPI (32,30);
+    crc_comp=atoi(DATA_Word);//тут адресс кассеты на бекплейне
+	crc_comp=(crc_comp<<4)|0x3;
+	crc_comp=FPGA_rSPI (32,crc_comp);
 	x_out("CODE FPGA:",crc_comp);
    } else	
+ if (strcmp(Word,"spi_rd_tst")==0) //
+   {	
+    crc_comp=atoi(DATA_Word);//тут адресс кассеты на бекплейне
+	crc_comp=(crc_comp<<4)|0x1;
+	crc_comp=FPGA_rSPI (32,crc_comp);
+	x_out("CODE FPGA:",crc_comp);
+   } else
 if (strcmp(Word,"JTAG_TST")==0)                     
    {
 	 crc_comp =atoi(DATA_Word);
@@ -3207,6 +3285,13 @@ int main(void)
   Transf("    Б330\r\n");
   Transf("-------------\r\n");
   DE_RS485(0);
+  CS_5_MK(1);
+  
+  //---убрать!!!--------
+  //PE14_0;
+  //PE12_0;
+  //--------------------
+  
   PWDN_4(1);
   
   ENABLE_LM25056_MK(0);//enable 
