@@ -256,10 +256,6 @@ typedef unsigned long uint32;
 
 //-----
 
-
-
-
-
 //----------------------
 
 #define VD3(a) ((a==1)?PC13_1 : PC13_0)
@@ -272,13 +268,14 @@ typedef unsigned long uint32;
 #define CS_SLAVE_5_MK(a) ((a==1)?PE11_1 : PE11_0)
 #define CS_2_MK(a)       ((a==1)?PB12_1 : PB12_0)
 
-#define POK_HDS_OUT(a)       	((a==1)?PD9_1  : PD9_0)
+
 #define OE_SCLK_SLAVE_5_MK(a)   ((a==1)?PD10_1 : PD10_0)
 #define UPR_HDS_MK(a)   		((a==1)?PD12_1 : PD12_0)
 #define ENABLE_LM25056_MK(a)  	((a==1)?PD14_1 : PD14_0)
 #define RESET_TCA6424A_MK(a)  	((a==1)?PD15_1 : PD15_0)
 #define SMBA_LM25056_MK(a)  	((a==1)?PC6_1 : PC6_0)
 
+#define POK_HDS_OUT         HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_9)
 #define INT_TCA6424A_MK     HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_7)
 #define FLAG_MIC29151       HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_8)
 
@@ -420,7 +417,20 @@ typedef unsigned long uint32;
 #define quantity_DATA 	8 //максимальная длинна данных
 #define quantity_SENDER 2 //максимальное количество адресатов
 
- 
+//-----------------------------------------------------------------
+typedef struct 		//структура параметров LM
+{
+	u32 TEMP;		//температура
+	u32 P;			//измеренная мощность
+	u32 I;			//измеренный ток
+	u32 U;			//измеренное напряжение
+	u8 ID[3];		//ID микросхемы
+	u32 P_max;		//максимально допустимая потребляемая мощность
+	u32 TEMP_max;	//максимально допустимая температура
+	u32 U_min; 		//минимально допустимое напряжение
+}LM_struct;
+
+//----------------------------------------------------------------- 
 typedef struct //структура команды
 {
 	u32 Cmd_size;

@@ -66,6 +66,10 @@ TIM_MasterConfigTypeDef sMasterConfig = {0};
 TIM_OC_InitTypeDef sConfigOC = {0};
 
 /* USER CODE BEGIN PV */
+#define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
+#define SYS_INTERVAL 500
+
+u32 TIMER_CONTROL_SYS;   		//переменная таймера контроля состояния системы блока питания
 
 volatile  uint16_t adcBuffer[5]; // Buffer for store the results of the ADC conversion
 float adc_ch[12];
@@ -79,7 +83,7 @@ volatile u32  SysTickDelay;
 
 u32 FLAG_T1;
 u32 FLAG_T2;
-u8 FLAG_FAPCH_ON;
+u8  FLAG_FAPCH_ON;
 
 uint8_t RX_uBUF[1];
 
@@ -176,14 +180,30 @@ u8 EVENT_INT6=0;
 u8 EVENT_INT7=0;
 u8 FLAG_DMA_ADC=0;
 
-u32 TEST_LED=0;
-u64 TIME_SYS=0;//переменная хранить системное время в милисекундах
-u32 TIME_TEST=0;
-u32 ID_CMD=0;						//переменная хранить текущий ID наших квитанций 
+u32 TEST_LED     =0;
+u64 TIME_SYS     =0;//переменная хранить системное время в милисекундах
+u32 TIME_TEST    =0;
+u32 ID_CMD       =0;//переменная хранить текущий ID наших квитанций 
+u32 FLAG_T1HZ_MK =0;//Это флаг показывает что в течении пары секунд была одна секундная метка
+u32 TIMER_T1HZ_MK=0;//Это контрольный таймер для проверки наличия секундной метки
+u8  PWR_CHANNEL=255;
 
-u8 PWR_CHANNEL=255;
+//флаги севтодиодов
+u8  LED_ISPRAV_AC=0;
+u8  LED_PROGR    =0;
+u8  LED_OFCH     =0;
+u8  LED_SINHR    =0;
+u8  LED_LS       =0;
+u8  LED_ISPR_J330=0;
+u8  LED_OTKL_AC  =0;
+u8  LED_TEMP	 =0;
+u32 TIMER_LED    =0;
+
+LM_struct LM1,LM2,LM3,LM4,LM5,LM6,LM7,LM8;
 
 u8 LM_ID_CN[8];
+u8 D_TEMP[4];
+int TMP_v=0;
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -217,14 +237,15 @@ u8 START_BP=0;
 
 u8  PWR_072      (u8);
 u8  LM_MFR_MODEL (u8);
-float LM_TEMP    (u8);
-float LM_v       (u8);
-float LM_in_p    (u8);
-float LM_in_i    (u8);
-float LM_aux_u   (u8);
+int LM_TEMP    (u8);
+int LM_v       (u8);
+int LM_in_p    (u8);
+int LM_in_i    (u8);
+int LM_aux_u   (u8);
 u8 TCA_WR    (u32);
 u8 LM_MFR_ID (u8);
 u8 TCA_test (void);
+void SYS_INFO (u8);
 void UART_DMA_TX (void);
 
 /* USER CODE END PFP */
@@ -725,9 +746,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : PD9 PD10 PD12 PD14 
                            PD15 PD0 PD1 PD4 
                            PD7 */
-  GPIO_InitStruct.Pin   = GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_14 
-                          |GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4 
-                          |GPIO_PIN_7;
+  GPIO_InitStruct.Pin   = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_7|GPIO_PIN_10|GPIO_PIN_12|GPIO_PIN_14|GPIO_PIN_15;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -751,6 +770,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /*Configure GPIO pin :  */
+  GPIO_InitStruct.Pin  = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PD3 */
   GPIO_InitStruct.Pin  = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -769,6 +794,9 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
 }
 
@@ -1082,6 +1110,14 @@ void u64_out (char s[],u64 a)
    sprintf (strng,"%u",a);
    Transf(strng);
    Transf ("\r");
+}
+
+void ARRAY_DATA (u32 a)  //разбиваем 32 битную переменную на байты и суём в транспортный массив
+{
+	D_TEMP[0]=a>>24;
+	D_TEMP[1]=a>>16;
+	D_TEMP[2]=a>> 8;
+	D_TEMP[3]=a;
 }
 
 void UART_IT_TX (void)
@@ -1430,6 +1466,13 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
+	
+ if (strcmp(Word,"upr")==0) // ~0 spi_write:adr.code;
+   {
+	 crc_comp =atoi(DATA_Word);	//первое число - адресс касеты на бекплейне
+     UPR_HDS_MK (crc_comp);
+	 u_out("принял upr:",crc_comp);
+   } else	
  if (strcmp(Word,"spi_write")==0) // ~0 spi_write:adr.code;
    {
 	 crc_comp =atoi(DATA_Word);	//первое число - адресс касеты на бекплейне
@@ -1586,6 +1629,12 @@ if (strcmp(Word,"MSG")==0) //
 	  u_out("u=",crc_comp);
 	  */
    } else
+if (strcmp(Word,"sys_info")==0) //
+   {
+	  crc_comp =atoi  (DATA_Word); 
+      u_out ("принял sys_info:",crc_comp); 
+      SYS_INFO(crc_comp);
+   } else
 if (strcmp(Word,"lm_ID")==0) //
    {
 	  crc_comp =atoi  (DATA_Word); 
@@ -1626,12 +1675,6 @@ if (strcmp(Word,"lm_ID")==0) //
 	  crc_comp =atoi  (DATA_Word); 
       u_out ("принял start:",crc_comp); 
       START_BP=crc_comp;
-   } else
- if (strcmp(Word,"pwm")==0) //
-   {
-	  crc_comp =atoi  (DATA_Word); 
-      u_out ("принял pwm:",crc_comp); 
-      PWM(crc_comp);
    } else
  if (strcmp(Word,"pwrdn")==0) //
    {
@@ -1971,64 +2014,22 @@ void WATCH_DOG (void)
   
 void BP_start (u16 a)
 {
-	static u8 step=0;
-	
-	if ((a==1)&&(step==0))
+	static u8 flag=0;
+	if (a==0)
 	{
-		step=1;
-	} else if ((step>4)&&(a==0)) step=0;
-	
-	if ((a==0)&&(step==0))
+		PWR_072    (255);//выключаем каналы питания и сбрасываем состояния переменных говорящих о каналах питания - в ноль
+		UPR_HDS_MK (1);	
+		TIMER_BP_PWM=1000;
+		if (flag==0) {Transf("Выключаем ПИТАНИЕ!\r\n");flag=1;}
+	} else
+	if ((TIMER_BP_PWM==0)&&(flag==1))
 	{
-		PWR_072 (255);//выключаем каналы питания и сбрасываем состояния переменных говорящих о каналах питания - в ноль
-		PWM (0);		
-	} 
-	
-	
-	if (step==1)
-	{
-		TIMER_BP_PWM=100;
-		step=2;
-		Transf("step1\r\n");
-		PWM (100);
-	}
-	
-	if ((step==2)&&(TIMER_BP_PWM==0))
-	{
-		PWM (1000);
-		TIMER_BP_PWM=100;
-		step=3;
-		Transf("step2\r");
-	}
-	
-	if ((step==3)&&(TIMER_BP_PWM==0))
-	{
-		PWM (3000);
-		TIMER_BP_PWM=100;
-		step=4;
-		Transf("step3\r");
-	}
-	
-	if ((step==4)&&(TIMER_BP_PWM==0))
-	{
-		PWM (7000);
-		TIMER_BP_PWM=100;
-		step=5;
-		Transf("step4\r");
-	}
-	
-	if ((step==5)&&(TIMER_BP_PWM==0))
-	{
-		PWM (9000);
-		TIMER_BP_PWM=100;
-		step=6;
-		Transf("step5\r");
-		
-		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c
-			
+		flag=0;
+		UPR_HDS_MK (0);			
+		Transf("Включаем ПИТАНИЕ!\r\n");
+		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
-	}
-	
+	}	
 }  
   
 void PWM (u16 a)
@@ -2185,7 +2186,58 @@ u8 LM_MFR_MODEL (u8 z)
 	return state;
 }
 
-
+void SYS_INFO (u8 a)
+{
+	Transf("\r\n");
+	if (a>0)
+	{
+		u_out("LM1.TEMP:",LM1.TEMP);
+		u_out("LM2.TEMP:",LM2.TEMP);
+		u_out("LM3.TEMP:",LM3.TEMP);
+		u_out("LM4.TEMP:",LM4.TEMP);
+		u_out("LM5.TEMP:",LM5.TEMP);
+		u_out("LM6.TEMP:",LM6.TEMP);
+		u_out("LM7.TEMP:",LM7.TEMP);
+		u_out("LM8.TEMP:",LM8.TEMP);
+			Transf("\r\n");
+	}
+	if (a>1)
+	{
+		u_out("LM1.P:",LM1.P);
+		u_out("LM2.P:",LM2.P);
+		u_out("LM3.P:",LM3.P);
+		u_out("LM4.P:",LM4.P);
+		u_out("LM5.P:",LM5.P);
+		u_out("LM6.P:",LM6.P);
+		u_out("LM7.P:",LM7.P);
+		u_out("LM8.P:",LM8.P);
+			Transf("\r\n");
+	}
+	if (a>2)
+	{
+		u_out("LM1.I:",LM1.I);
+		u_out("LM2.I:",LM2.I);
+		u_out("LM3.I:",LM3.I);
+		u_out("LM4.I:",LM4.I);
+		u_out("LM5.I:",LM5.I);
+		u_out("LM6.I:",LM6.I);
+		u_out("LM7.I:",LM7.I);
+		u_out("LM8.I:",LM8.I);
+			Transf("\r\n");
+	}
+	if (a>3)
+	{
+		u_out("LM1.U:",LM1.U);
+		u_out("LM2.U:",LM2.U);
+		u_out("LM3.U:",LM3.U);
+		u_out("LM4.U:",LM4.U);
+		u_out("LM5.U:",LM5.U);
+		u_out("LM6.U:",LM6.U);
+		u_out("LM7.U:",LM7.U);
+		u_out("LM8.U:",LM8.U);
+			Transf("\r\n");
+	}
+}
 
 u8 LM_MFR_ID (u8 z)
 {
@@ -2231,14 +2283,63 @@ u8 LM_MFR_ID (u8 z)
 			LM_ID_CN[2]=a[2];	
 		}
 	}	
+
+  if (z==1) 
+  {
+    LM1.ID[0]=a[0];
+    LM1.ID[1]=a[1];
+    LM1.ID[2]=a[2];
+  }
+  if (z==2) 
+  {
+    LM2.ID[0]=a[0];
+    LM2.ID[1]=a[1];
+    LM2.ID[2]=a[2];
+  }
+  if (z==3) 
+  {
+    LM3.ID[0]=a[0];
+    LM3.ID[1]=a[1];
+    LM3.ID[2]=a[2];
+  }
+  if (z==4) 
+  {
+    LM4.ID[0]=a[0];
+    LM4.ID[1]=a[1];
+    LM4.ID[2]=a[2];
+  }
+  if (z==5) 
+  {
+    LM5.ID[0]=a[0];
+    LM5.ID[1]=a[1];
+    LM5.ID[2]=a[2];
+  }
+  if (z==6) 
+  {
+    LM6.ID[0]=a[0];
+    LM6.ID[1]=a[1];
+    LM6.ID[2]=a[2];
+  }
+  if (z==7) 
+  {
+    LM7.ID[0]=a[0];
+    LM7.ID[1]=a[1];
+    LM7.ID[2]=a[2];
+  }
+  if (z==8) 
+  {
+    LM8.ID[0]=a[0];
+    LM8.ID[1]=a[1];
+    LM8.ID[2]=a[2];
+  }
 	
 	HAL_I2C_DeInit(&hi2c1);
 	return state;
 }
 
-u8 D_TEMP[4];
 
-float LM_TEMP (u8 z)
+
+int LM_TEMP (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
 	 uint8_t  a[32];
@@ -2301,23 +2402,13 @@ float LM_TEMP (u8 z)
 	value=x*100;
 	
 	if (error==1) value=0xffffffff;
-	
-	D_TEMP[0]=value>>24;
-	D_TEMP[1]=value>>16;
-	D_TEMP[2]=value>> 8;
-	D_TEMP[3]=value;
-	
-/* 	u_out("D_TEMP[0]",D_TEMP[0]);
-	u_out("D_TEMP[1]",D_TEMP[1]);
-	u_out("D_TEMP[2]",D_TEMP[2]);
-	u_out("D_TEMP[3]",D_TEMP[3]); */
-	
+
 	HAL_I2C_DeInit(&hi2c1);
 	
-	return x;
+	return value;
 }
 
-float LM_v (u8 z)
+int LM_v (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
 	 uint8_t  a[32];
@@ -2388,10 +2479,10 @@ float LM_v (u8 z)
 	
 	HAL_I2C_DeInit(&hi2c1);
 	
-	return x;
+	return value;
 }
   
-float LM_aux_u (u8 z)
+int LM_aux_u (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
 	 uint8_t  a[32];
@@ -2442,10 +2533,10 @@ float LM_aux_u (u8 z)
 	
 	HAL_I2C_DeInit(&hi2c1);
 	
-	return x;
+	return value;
 }
 
-float LM_in_i (u8 z)
+int LM_in_i (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
 	 uint8_t  a[32];
@@ -2496,10 +2587,10 @@ float LM_in_i (u8 z)
 	
 	HAL_I2C_DeInit(&hi2c1);
 	
-	return x;
+	return value;
 }
 
-float LM_in_p (u8 z)
+int LM_in_p (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
 	 uint8_t  a[32];
@@ -2552,7 +2643,7 @@ float LM_in_p (u8 z)
 	
 	HAL_I2C_DeInit(&hi2c1);
 	
-	return x;
+	return value;
 }
 
 u32 idx_srv(
@@ -2565,6 +2656,8 @@ u32 k //смещение данных в байтах от их начального положения
  if (idx>(SIZE_SERVER-1)) idx=idx-SIZE_SERVER;
  return idx;
 }
+
+
 
 void CMD_search (ID_SERVER *id,SERVER *srv)
 {
@@ -2634,7 +2727,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			//------------------------------------
 			if (START_BP==1)
 			{
-				LM_MFR_ID(1);
+			//	LM_MFR_ID(1);
 				
 				SYS_CMD_MSG(
 				id,				//реестр
@@ -2642,11 +2735,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH1,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM1.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(2);
+			//	LM_MFR_ID(2);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2654,11 +2747,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH2,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM2.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(3);
+			//	LM_MFR_ID(3);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2666,11 +2759,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH3,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM3.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(4);
+			//	LM_MFR_ID(4);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2678,11 +2771,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH4,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM4.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(5);
+			//	LM_MFR_ID(5);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2690,12 +2783,12 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH5,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM5.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
 				
-				LM_MFR_ID(6);
+			//	LM_MFR_ID(6);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2703,11 +2796,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH6,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM6.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(7);
+			//	LM_MFR_ID(7);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2715,11 +2808,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH7,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM7.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_MFR_ID(8);
+			//	LM_MFR_ID(8);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2727,7 +2820,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				i,	 			//индекс в реестре
 				MSG_ID_CH8,		//тип сообщения
 				3,		 		//объём данных сообщения в байтах
-				LM_ID_CN,		//данные сообщения - массив данных
+				LM8.ID,		//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
@@ -2735,19 +2828,19 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			//-----------------------------------
 			if (START_BP==1)
 			{
-				LM_TEMP(1);
-							
+				ARRAY_DATA(LM1.TEMP);
+				
 				SYS_CMD_MSG(
 				id,//реестр
 				&INVOICE[ADR], 	//структура квитанций	
 				i,	 			//индекс в реестре
 				MSG_TEMP_CH1,	//тип сообщения
 				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
+				D_TEMP,			//данные сообщения - массив данных
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(2);
+				ARRAY_DATA(LM2.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2759,7 +2852,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(3);
+				ARRAY_DATA(LM3.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2771,7 +2864,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(4);
+				ARRAY_DATA(LM4.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2783,7 +2876,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(5);
+				ARRAY_DATA(LM5.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2795,7 +2888,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(6);
+				ARRAY_DATA(LM6.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2807,7 +2900,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(7);
+				ARRAY_DATA(LM7.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2819,7 +2912,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 				TIME_SYS	  	//время составления квитанции
 				);
 				
-				LM_TEMP(8);
+				ARRAY_DATA(LM8.TEMP);
 				
 				SYS_CMD_MSG(
 				id,//реестр
@@ -2833,7 +2926,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			}
 			//-----------------------------------
 			
-			LM_in_p(1);
+			ARRAY_DATA(LM1.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2845,7 +2938,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(2);
+			ARRAY_DATA(LM2.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2857,7 +2950,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(3);
+			ARRAY_DATA(LM3.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2869,7 +2962,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(4);
+			ARRAY_DATA(LM4.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2881,7 +2974,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(5);
+			ARRAY_DATA(LM5.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2893,7 +2986,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(6);
+			ARRAY_DATA(LM6.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2905,7 +2998,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(7);
+			ARRAY_DATA(LM7.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2917,7 +3010,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_p(8);
+			ARRAY_DATA(LM8.P);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2931,7 +3024,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 			//-----------------------------------
 			
-			LM_in_i(1);
+			ARRAY_DATA(LM1.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2943,7 +3036,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(2);
+			ARRAY_DATA(LM2.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2955,7 +3048,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(3);
+			ARRAY_DATA(LM3.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2967,7 +3060,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(4);
+			ARRAY_DATA(LM4.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2979,7 +3072,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(5);
+			ARRAY_DATA(LM5.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -2991,7 +3084,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(6);
+			ARRAY_DATA(LM6.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3003,7 +3096,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(7);
+			ARRAY_DATA(LM7.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3015,7 +3108,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_in_i(8);
+			ARRAY_DATA(LM8.I);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3029,7 +3122,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 			//-----------------------------------
 			
-			LM_v(1);
+			ARRAY_DATA(LM1.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3041,7 +3134,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(2);
+			ARRAY_DATA(LM2.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3053,7 +3146,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(3);
+			ARRAY_DATA(LM3.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3065,7 +3158,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(4);
+			ARRAY_DATA(LM4.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3077,7 +3170,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(5);
+			ARRAY_DATA(LM5.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3089,7 +3182,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(6);
+			ARRAY_DATA(LM6.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3101,7 +3194,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(7);
+			ARRAY_DATA(LM7.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3113,7 +3206,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
 			
-			LM_v(8);
+			ARRAY_DATA(LM8.U);
 			
 			SYS_CMD_MSG(
 			id,//реестр
@@ -3240,6 +3333,163 @@ u8 PIN_control_PB5 (void)
   if (pn_old!=pn) {pn_old=pn;flag=1;} else flag=0;
   return flag;
 }
+
+void CONTROL_T1HZ_MK (void)
+{
+	u8 val=0;
+	if ((TIMER_T1HZ_MK>1500)&&(FLAG_T1HZ_MK==1)) 
+	{
+		FLAG_T1HZ_MK=0;
+		Transf("ПРОПАЛ СИГНАЛ T1HZ_MK!!!\r\n");
+	}
+}
+  
+void LED_CONTROL (void)
+{
+       u32 z =0;
+static u32 z0; 
+
+z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
+				((LED_OFCH     &3)<<21)+
+				((LED_SINHR    &3)<<18)+
+				((LED_LS       &3)<<16)+
+				((LED_ISPR_J330&3)<<14)+
+				((LED_OTKL_AC  &1)<<12)+
+				((LED_TEMP     &3)<<8);
+
+if (START_BP==0)  z=0;
+
+if (TIMER_LED>LED_INTERVAL) 
+	{
+		if (z!=z0)
+		{
+			TCA_WR(z);//выполняем команду
+			z0=z;
+			x_out("z:",z);
+		}
+		TIMER_LED=0;
+	}
+}
+
+void CONTROL_POK (void)
+{
+	static u8 var=0;
+	if (POK_HDS_OUT!=var)
+	{
+		var=POK_HDS_OUT;
+		u_out("POK_HDS_OUT:",POK_HDS_OUT);
+	}
+}
+
+void CONTROL_SYS (void)
+{
+	static u8 flag=0;
+	
+  if ((START_BP==1)&&(TIMER_CONTROL_SYS>SYS_INTERVAL))
+  {
+	flag=1;
+    TIMER_CONTROL_SYS=0;
+    //проверка ID
+    LM_MFR_ID(1);
+    LM_MFR_ID(2);
+    LM_MFR_ID(3);
+    LM_MFR_ID(4);
+    LM_MFR_ID(5);
+    LM_MFR_ID(6);
+    LM_MFR_ID(7);
+    LM_MFR_ID(8);
+    //измерение температуры
+    LM1.TEMP=LM_TEMP(1);
+    LM2.TEMP=LM_TEMP(2);
+    LM3.TEMP=LM_TEMP(3);
+    LM4.TEMP=LM_TEMP(4);
+    LM5.TEMP=LM_TEMP(5);
+    LM6.TEMP=LM_TEMP(6);
+    LM7.TEMP=LM_TEMP(7);
+    LM8.TEMP=LM_TEMP(8);
+    //Измерение потребляемой мощности
+    LM1.P=LM_in_p(1);
+    LM2.P=LM_in_p(2);
+    LM3.P=LM_in_p(3);
+    LM4.P=LM_in_p(4);
+    LM5.P=LM_in_p(5);
+    LM6.P=LM_in_p(6);
+    LM7.P=LM_in_p(7);
+    LM8.P=LM_in_p(8);
+    //Измерение потребляемого тока
+    LM1.I=LM_in_i(1);
+    LM2.I=LM_in_i(2);
+    LM3.I=LM_in_i(3);
+    LM4.I=LM_in_i(4);
+    LM5.I=LM_in_i(5);
+    LM6.I=LM_in_i(6);
+    LM7.I=LM_in_i(7);
+    LM8.I=LM_in_i(8);
+    //Измерение напряжения в каналах
+    LM1.U=LM_v(1);
+    LM2.U=LM_v(2);
+    LM3.U=LM_v(3);
+    LM4.U=LM_v(4);
+    LM5.U=LM_v(5);
+    LM6.U=LM_v(6);
+    LM7.U=LM_v(7);
+    LM8.U=LM_v(8);
+  } else
+	  if ((START_BP==0)&&(flag==1))
+  {
+	flag=0;
+	LM1.TEMP=0xffffffff;
+    LM2.TEMP=0xffffffff;
+    LM3.TEMP=0xffffffff;
+    LM4.TEMP=0xffffffff;
+    LM5.TEMP=0xffffffff;
+    LM6.TEMP=0xffffffff;
+    LM7.TEMP=0xffffffff;
+    LM8.TEMP=0xffffffff;
+	
+	LM1.U=0;
+    LM2.U=0;
+    LM3.U=0;
+    LM4.U=0;
+    LM5.U=0;
+    LM6.U=0;
+    LM7.U=0;
+    LM8.U=0;
+	
+	LM1.I=0;
+    LM2.I=0;
+    LM3.I=0;
+    LM4.I=0;
+    LM5.I=0;
+    LM6.I=0;
+    LM7.I=0;
+    LM8.I=0;
+	
+	LM1.P=0;
+    LM2.P=0;
+    LM3.P=0;
+    LM4.P=0;
+    LM5.P=0;
+    LM6.P=0;
+    LM7.P=0;
+    LM8.P=0;
+  }
+}
+
+void ALARM_SYS_TEMP (void)  
+{
+	u8 var=0;
+	if (LM1.TEMP>LM1.TEMP_max) var=var|(1<<0);
+	if (LM2.TEMP>LM2.TEMP_max) var=var|(1<<1);
+	if (LM3.TEMP>LM3.TEMP_max) var=var|(1<<2);
+	if (LM4.TEMP>LM4.TEMP_max) var=var|(1<<3);
+	if (LM5.TEMP>LM5.TEMP_max) var=var|(1<<4);
+	if (LM6.TEMP>LM6.TEMP_max) var=var|(1<<5);
+	if (LM7.TEMP>LM7.TEMP_max) var=var|(1<<6);
+	if (LM8.TEMP>LM8.TEMP_max) var=var|(1<<7);
+	
+	if (var!=0) LED_TEMP=2; else LED_TEMP=1; 
+}
   
 int main(void)
 {
@@ -3269,7 +3519,7 @@ int main(void)
 
   MX_DMA_Init ();
   MX_ADC1_Init();
-  MX_TIM4_Init();
+//MX_TIM4_Init();  НЕ НУЖЕН, В СХЕМЕ НЕТ БОЛЬШЕ ШИМа!!!
 //MX_SPI2_Init();
 //MX_SPI3_Init();
   MX_SPI4_Init();
@@ -3280,6 +3530,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 //  Delay(1000);
+
+//------SETUP----------
+LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
+LM2.TEMP_max=5000;
+LM3.TEMP_max=5000;
+LM4.TEMP_max=5000;
+LM5.TEMP_max=5000;
+LM6.TEMP_max=5000;
+LM7.TEMP_max=5000;
+LM8.TEMP_max=5000;
+//---------------------
   
   Transf("-------------\r\n");
   Transf("    Б330\r\n");
@@ -3324,8 +3585,13 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
  }
  
  Set_network();
- RECEIVE_udp (0, 3001,1);
+ RECEIVE_udp(0, 3001,1);
 
+//-------------------------------------
+//           Для сдачи по ТУ
+
+//  TCA_WR(255);//зажигаем все светодиоды на лицевой панели
+//-------------------------------------
   while (1)
   {
     /* USER CODE END WHILE */
@@ -3341,10 +3607,24 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	//	Transf("event 1!\r");
 		RECEIVE_udp (0, 3001,1);		
 	}; 
+	
+	if (EVENT_INT3==1)//контроль секундной метки T1HZ_MK
+	{
+		if (FLAG_T1HZ_MK==0) Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
+		EVENT_INT3=0;
+		FLAG_T1HZ_MK=1;
+		TIMER_T1HZ_MK=0;			
+	}; 
+	
+	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
+    CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
+	CONTROL_POK 	  ();
+	LED_CONTROL 	  ();
+	CONTROL_T1HZ_MK   ();
 	CMD_search (&ID_SERV1,&SERV1);
-	SEND_UDP_MSG ();
-  	  UART_DMA_TX();
-	//	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	
+	SEND_UDP_MSG 	  ();
+    UART_DMA_TX  	  ();
+//	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	
   }
 
 }

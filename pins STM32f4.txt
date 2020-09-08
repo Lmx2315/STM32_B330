@@ -71,3 +71,6 @@ MOSI_EPCS			80	PC12
 
 
 
+TEMP:
+-----
+T1HZ_MK				84	PD3

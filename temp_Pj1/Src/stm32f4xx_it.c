@@ -60,6 +60,9 @@ extern u8 EVENT_INT6;
 extern u8 EVENT_INT7;
 extern u32 TIME_TEST;
 extern u64 TIME_SYS;
+extern u32 TIMER_T1HZ_MK;
+extern u32 TIMER_LED;
+extern u32 TIMER_CONTROL_SYS;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -212,6 +215,9 @@ void SysTick_Handler(void)
   TIMER1++;
   TIME_SYS++;
   TIME_TEST++;
+  TIMER_T1HZ_MK++;
+  TIMER_LED++;
+  TIMER_CONTROL_SYS++;
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
