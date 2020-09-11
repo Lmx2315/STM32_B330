@@ -1723,7 +1723,12 @@ if (strcmp(Word,"info")==0)
  
      info();
    } else
-
+if (strcmp(Word,"led")==0)                     
+   {
+	 crc_comp =atoi(DATA_Word);
+     u_out ("принял led:",crc_comp);
+	 TCA_WR(crc_comp);
+   }  
 if (strcmp(Word,"menu")==0)                     
    {
      Transf ("принял menu\r\n"    );

@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\temp_Pj1\temp_Pj1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\temp_Pj1\temp_Pj1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Tue Sep 08 17:37:17 2020
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Tue Sep 08 17:53:49 2020
 <BR><P>
 <H3>Maximum Stack Usage =        328 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -280,18 +280,18 @@ Global Symbols
 <P><STRONG><a name="[55]"></a>__aeabi_uldivmod</STRONG> (Thumb, 98 bytes, Stack size 40 bytes, uldiv.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = __aeabi_uldivmod
 </UL>
-<BR>[Calls]<UL><LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
-<LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
+<BR>[Calls]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
+<LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
 </UL>
-<BR>[Called By]<UL><LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
+<BR>[Called By]<UL><LI><a href="#[c2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_GetSysClockFreq
+<LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 <LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
-<LI><a href="#[c2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_GetSysClockFreq
 </UL>
 
 <P><STRONG><a name="[56]"></a>__aeabi_llsr</STRONG> (Thumb, 32 bytes, Stack size 0 bytes, llushr.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
+<BR><BR>[Called By]<UL><LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
-<LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
 </UL>
 
 <P><STRONG><a name="[151]"></a>_ll_ushift_r</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llushr.o(.text), UNUSED)
@@ -354,9 +354,9 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[103]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Massiv_dbm
 <LI><a href="#[73]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ADC_Temp
+<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dsub
 <LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_drsub
 <LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dsub
 </UL>
 
 <P><STRONG><a name="[62]"></a>__aeabi_dsub</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, dadd.o(.text))
@@ -427,10 +427,10 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[57]"></a>__aeabi_llsl</STRONG> (Thumb, 30 bytes, Stack size 0 bytes, llshl.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
-<LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
+<BR><BR>[Called By]<UL><LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
 </UL>
 
 <P><STRONG><a name="[156]"></a>_ll_shift_l</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llshl.o(.text), UNUSED)
@@ -462,17 +462,17 @@ Global Symbols
 <P><STRONG><a name="[61]"></a>_double_round</STRONG> (Thumb, 30 bytes, Stack size 8 bytes, depilogue.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = _double_round
 </UL>
-<BR>[Called By]<UL><LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ddiv
+<BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ddiv
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_epilogue
 </UL>
 
 <P><STRONG><a name="[60]"></a>_double_epilogue</STRONG> (Thumb, 156 bytes, Stack size 32 bytes, depilogue.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = _double_epilogue &rArr; _double_round
 </UL>
-<BR>[Calls]<UL><LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
+<BR>[Calls]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
+<LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
 <LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_double_round
-<LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
 </UL>
 <BR>[Called By]<UL><LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ui2d
 <LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_i2d
@@ -481,8 +481,8 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[6c]"></a>__aeabi_d2ulz</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, dfixul.o(.text), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
-<LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
+<BR><BR>[Calls]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsr
+<LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_llsl
 </UL>
 <BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
 </UL>
@@ -1414,7 +1414,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[7c]"></a>IO</STRONG> (Thumb, 3256 bytes, Stack size 56 bytes, main.o(i.IO))
+<P><STRONG><a name="[7c]"></a>IO</STRONG> (Thumb, 3314 bytes, Stack size 56 bytes, main.o(i.IO))
 <BR><BR>[Stack]<UL><LI>Max Depth = 264<LI>Call Chain = IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[b8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_I2C_Master_Transmit
@@ -1440,7 +1440,6 @@ Global Symbols
 <LI><a href="#[97]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_rSPI
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DS4520_read
 <LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ADC_test
-<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;atoi
 <LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;jtag_scan
 <LI><a href="#[ef]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TST
 <LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Set_network
@@ -1449,6 +1448,7 @@ Global Symbols
 <LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;JTAG_SCAN
 <LI><a href="#[e0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ID_recive
 <LI><a href="#[ee]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
+<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;atoi
 </UL>
 <BR>[Called By]<UL><LI><a href="#[127]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_conrol
 <LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;CMD_search
@@ -2039,8 +2039,8 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = f_out &rArr; __2sprintf
 </UL>
 <BR>[Calls]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf
-<LI><a href="#[13a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2sprintf
 <LI><a href="#[77]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
+<LI><a href="#[13a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2sprintf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ADC_test
 </UL>
@@ -2737,22 +2737,22 @@ Local Symbols
 </UL>
 
 <P><STRONG><a name="[133]"></a>_fp_digits</STRONG> (Thumb, 334 bytes, Stack size 56 bytes, printfa.o(i._fp_digits), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
-<LI><a href="#[134]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_cdrcmple
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dmul
+<BR><BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dmul
 <LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ddiv
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
+<LI><a href="#[134]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_cdrcmple
 </UL>
 <BR>[Called By]<UL><LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 </UL>
 
 <P><STRONG><a name="[12b]"></a>_printf_core</STRONG> (Thumb, 1744 bytes, Stack size 136 bytes, printfa.o(i._printf_core), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uidivmod
+<BR><BR>[Calls]<UL><LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uidivmod
 <LI><a href="#[135]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_pre_padding
 <LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_post_padding
 <LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
-<LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
 </UL>
 <BR>[Called By]<UL><LI><a href="#[12a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__0sprintf
 </UL>
