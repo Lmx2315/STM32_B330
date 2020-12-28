@@ -270,7 +270,7 @@ void SystemClock_Config(void)
   */
   
   /*
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;//
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;// это дл€ работы от внутреннего источника тактов
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;//
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -280,12 +280,22 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   */
-  
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  /*
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;// это дл€ работы от кварца 16 ћ√ц
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 100;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
+  */
+  
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;// это дл€ работы от кварца 8 ћ√ц
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
@@ -600,7 +610,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 115200;//115200
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -2553,11 +2563,11 @@ int LM_in_i (u8 z)
 	 int value=0;
 	 
 	 float x=0;
-	 float m=13797;
+	 float m=6898;//5 мќм
 	 float y=0;
 	 float r=2;
-	 float b=-1833;
-	 int  p=0;
+	 float b=0;//-1833
+	 int   p=0;
 	 
 	HAL_I2C_Init(&hi2c1);
 	 
@@ -2577,7 +2587,7 @@ int LM_in_i (u8 z)
 	p=(a[1]<<8)+a[0];
 	y=p;
 
-	x=(1/m)*(y*(powf(10,r))-b);
+	x=(1/m)*((y*(powf(10,r)))-b);
 	
 //	f_out("I=",x);
 	
@@ -2607,11 +2617,11 @@ int LM_in_p (u8 z)
 	 int value;
 	 
 	 float x=0;
-	 float m=5501;
+	 float m=2745;
 	 float y=0;
 	 float r=3;
-	 float b=-2908;
-	 int  p=0;
+	 float b=0;
+	 int   p=0;
 	 
 	HAL_I2C_Init(&hi2c1);
 	 
