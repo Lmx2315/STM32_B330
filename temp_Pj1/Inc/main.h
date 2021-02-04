@@ -318,11 +318,14 @@ typedef unsigned long uint32;
 #define u8  uint8_t
 
 //---------------------------------------------------------------------
-#define Bufer_size   8192u   //16384
-
 
 // USART1 Receiver buffer
 #define RX_BUFFER_SIZE1 64u
+#define Bufer_size   8192u   //16384
+
+// USART2 Receiver buffer
+#define RX_BUFFER_SIZE2 64u
+#define Bufer_size2   1024u   //16384
 
 #define buf_IO   32u 
 #define buf_Word 32u 

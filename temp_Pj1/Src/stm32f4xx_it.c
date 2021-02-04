@@ -45,10 +45,11 @@
 
 extern uint32_t TIMER1;
 extern u32 TIMER_BP_PWM;
-extern u8 flag_pachka_TXT; //устанавливаем флаг передачи
-extern volatile unsigned int rx_wr_index1,rx_rd_index1,rx_counter1;
+extern u8 flag_pachka_TXT; //
+extern u8 flag_pachka_TXT2; //
 extern volatile u32 SysTickDelay; 
 
+extern unsigned int timer_DMA1_Stream6;
 extern unsigned int timer_DMA2;
 extern u8 EVENT_INT0;
 extern u8 EVENT_INT1;
@@ -79,8 +80,10 @@ extern u32 TIMER_CONTROL_SYS;
 extern DMA_HandleTypeDef hdma_adc1;
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 extern DMA_HandleTypeDef hdma_usart6_tx;
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim4;
 /* USER CODE BEGIN EV */
@@ -212,6 +215,7 @@ void SysTick_Handler(void)
 
   if (TIMER_BP_PWM!=0) TIMER_BP_PWM--;
   timer_DMA2++;
+  timer_DMA1_Stream6++;
   TIMER1++;
   TIME_SYS++;
   TIME_TEST++;
@@ -316,6 +320,34 @@ void USART1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream6 global interrupt.
+  */
+void DMA1_Stream6_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream6_IRQn 0 */
+	flag_pachka_TXT2=0; //
+
+  /* USER CODE END DMA1_Stream6_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+  /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART2 global interrupt.
+  */
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
+  /* USER CODE END USART2_IRQn 1 */
+}
+/**
   * @brief This function handles DMA2 stream0 global interrupt.
   */
 void DMA2_Stream0_IRQHandler(void)
@@ -349,7 +381,7 @@ void DMA2_Stream6_IRQHandler(void)
 void DMA2_Stream7_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA2_Stream7_IRQn 0 */
-	flag_pachka_TXT=0; //снимаем флаг передачи
+	flag_pachka_TXT=0; //
   /* USER CODE END DMA2_Stream7_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart1_tx);
   /* USER CODE BEGIN DMA2_Stream7_IRQn 1 */

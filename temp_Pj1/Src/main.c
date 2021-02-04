@@ -57,6 +57,7 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart6;
 
 DMA_HandleTypeDef hdma_usart1_tx;
+DMA_HandleTypeDef hdma_usart2_tx;
 DMA_HandleTypeDef hdma_usart6_tx;
 
 TIM_HandleTypeDef htim4;
@@ -86,7 +87,9 @@ u32 FLAG_T2;
 u8  FLAG_FAPCH_ON;
 
 uint8_t RX_uBUF[1];
+uint8_t RX2_uBUF[1];
 
+//----------------UART1---------------------------------
 unsigned int timer_DMA2;
 u8 flag_pachka_TXT; //
 uint16_t  text_lengh;
@@ -95,6 +98,16 @@ uint8_t text_buffer[Bufer_size];
 volatile char          rx_buffer1[RX_BUFFER_SIZE1];
 volatile unsigned int rx_wr_index1,rx_rd_index1,rx_counter1;
 volatile u8  rx_buffer_overflow1;
+//----------------UART2---------------------------------
+unsigned int timer_DMA1_Stream6;
+u8 flag_pachka_TXT2; //
+uint16_t  text_lengh2;
+uint8_t text_buffer2[Bufer_size2];
+
+volatile char          rx_buffer2[RX_BUFFER_SIZE2];
+volatile unsigned int rx_wr_index2,rx_rd_index2,rx_counter2;
+volatile u8  rx_buffer_overflow2;
+
 
 
 char sr[BUFFER_SR+1];
@@ -246,7 +259,8 @@ u8 TCA_WR    (u32);
 u8 LM_MFR_ID (u8);
 u8 TCA_test (void);
 void SYS_INFO (u8);
-void UART_DMA_TX (void);
+void UART_DMA_TX  (void);
+void UART_DMA_TX2 (void);
 
 /* USER CODE END PFP */
 
@@ -280,7 +294,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   */
-  /*
+  
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;// это дл€ работы от кварца 16 ћ√ц
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -289,8 +303,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
-  */
   
+  /*
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;// это дл€ работы от кварца 8 ћ√ц
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -299,7 +313,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
-  
+  */
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -701,6 +715,8 @@ static void MX_DMA_Init(void)
 {
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+    /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA2_Stream0_IRQn interrupt configuration */
@@ -712,6 +728,11 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream7_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+
+    /* DMA interrupt init */
+  /* DMA1_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
 
@@ -985,6 +1006,20 @@ void Transf(const char* s)  // процедура отправки строки символов в порт
   } 
 }
 
+void Transf2(const char* s)  // процедура отправки строки символов в порт
+{
+  u32 l=0;
+  u32 i=0;
+         
+  if ((flag_pachka_TXT2==0) )
+  {
+    l=strlen(s);
+    if ((text_lengh2+l)>Bufer_size2-5) text_lengh2=0u;
+    for (i=text_lengh2;i<(text_lengh2+l);i++) text_buffer2[i]=s[i-text_lengh2];
+    text_lengh2=text_lengh2+l;
+  } 
+}
+
 void itoa(int val,  char *bufstr, int base) //
 {
     u8 buf[32] = {0};
@@ -1157,6 +1192,26 @@ if (HAL_UART_GetState(&huart1)!=HAL_UART_STATE_BUSY_TX )
 			text_lengh=0u;  //обнуление счЄтчика буфера 
 			flag_pachka_TXT=1; //устанавливаем флаг передачи
 			timer_DMA2=0;
+		  }
+	}	
+} 
+
+void UART_DMA_TX2 (void)
+{
+ uint16_t k;
+
+if (HAL_UART_GetState(&huart2)!=HAL_UART_STATE_BUSY_TX )
+	{
+		if ((flag_pachka_TXT2==0)&&(text_lengh2>1u)&&(timer_DMA1_Stream6>250))
+		 {
+			NRE_RS485(1);//выключаем буфер 485 на приЄм 
+			DE_RS485(1);//включаем буфер 485 на передачу
+
+			k = text_lengh2;
+			HAL_UART_Transmit_DMA(&huart2,(uint8_t *)text_buffer2,k);
+			text_lengh2=0u;  //обнуление счЄтчика буфера 
+			flag_pachka_TXT2=1; //устанавливаем флаг передачи
+			timer_DMA1_Stream6=0;
 		  }
 	}	
 } 
@@ -1476,7 +1531,11 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых €вл€етс€ хоз€ин 
 {
-	
+ if (strcmp(Word,"rs485_help")==0) // ~0 spi_write:adr.code;
+   {
+	 u_out("прин€л rs485_help:",crc_comp);
+	 Transf2("~0 help;");
+   } else		
  if (strcmp(Word,"upr")==0) // ~0 spi_write:adr.code;
    {
 	 crc_comp =atoi(DATA_Word);	//первое число - адресс касеты на бекплейне
@@ -1843,23 +1902,32 @@ char getchar1(void)
     --rx_counter1;
     return data;
 }
+
+char getchar2(void)
+{
+   uint8_t data;
+   while (rx_counter2 == 0);
+   data = rx_buffer2[ rx_rd_index2++ ];
+   if (rx_rd_index2 == RX_BUFFER_SIZE2) rx_rd_index2 = 0;
+    --rx_counter2;
+    return data;
+}
       
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
- //-------------------------  
-   rx_buffer1[rx_wr_index1++]= (uint8_t) (RX_uBUF[0]& 0xFF); //считываем данные в буфер, инкрементиру€ хвост буфера
-   if ( rx_wr_index1 == RX_BUFFER_SIZE1) rx_wr_index1=0; //идем по кругу
-   	 
-	  if (++rx_counter1 == RX_BUFFER_SIZE1) //переполнение буфера
-      {
-        rx_counter1=0; //начинаем сначала (удал€ем все данные)
-        rx_buffer_overflow1=1;  //сообщаем о переполнении
-      }
-	  
- //--------------------------  
-   HAL_UART_Receive_IT(&huart1,RX_uBUF,1);
-}
 
+		//-------------------------  
+   		rx_buffer1[rx_wr_index1++]= (uint8_t) (RX_uBUF[0]& 0xFF); //считываем данные в буфер, инкрементиру€ хвост буфера
+   		if ( rx_wr_index1 == RX_BUFFER_SIZE1) rx_wr_index1=0; //идем по кругу
+   	 
+	  	if (++rx_counter1 == RX_BUFFER_SIZE1) //переполнение буфера
+      	{
+        	rx_counter1=0; //начинаем сначала (удал€ем все данные)
+        	rx_buffer_overflow1=1;  //сообщаем о переполнении
+      	}	  
+ 		//--------------------------  
+   		HAL_UART_Receive_IT(huart,RX_uBUF,1);
+}
 
 
 void UART_conrol (void)
@@ -1903,6 +1971,7 @@ void LED (void)
 		VD4(1);
 		VD5(0);
 		FLAG_T2=1;
+		//Transf2("~0 help;\r\n");
 	}
 	
 	if ((TIMER1>400))
@@ -3505,7 +3574,16 @@ void ALARM_SYS_TEMP (void)
 	
 	if (var!=0) LED_TEMP=2; else LED_TEMP=1; 
 }
-  
+
+void UART_CNTR (UART_HandleTypeDef *huart)
+{
+	if (huart->gState != HAL_UART_STATE_BUSY_TX)
+	{
+		NRE_RS485(0);//включаем буфер 485 на приЄм 
+		DE_RS485 (0);//выключаем буфер 485 на передачу
+	}
+}  
+
 int main(void)
 {
 	int i=0;
@@ -3540,7 +3618,7 @@ int main(void)
   MX_SPI4_Init();
   MX_SPI5_Init();
   MX_USART1_UART_Init();
-//MX_USART2_UART_Init();
+  MX_USART2_UART_Init();
 //MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
@@ -3560,7 +3638,7 @@ LM8.TEMP_max=5000;
   Transf("-------------\r\n");
   Transf("    Ѕ330\r\n");
   Transf("-------------\r\n");
-  DE_RS485(0);
+  DE_RS485(1);
   CS_5_MK(1);
   
   //---убрать!!!--------
@@ -3570,8 +3648,12 @@ LM8.TEMP_max=5000;
   
   PWDN_4(1);
   
+  ENABLE_LM25056_MK(1);//enable 
+  Delay(2);
   ENABLE_LM25056_MK(0);//enable 
   PWR_072 (255);	   //сн€ть питание на кассеты	
+  RESET_TCA6424A_MK(0);
+  Delay(2);
   RESET_TCA6424A_MK(1); 
   
   VD3(0);
@@ -3582,6 +3664,7 @@ LM8.TEMP_max=5000;
  Massiv_dbm();
  
 HAL_UART_Receive_IT(&huart1,RX_uBUF,1);
+HAL_UART_Receive_IT(&huart2,RX_uBUF,1);
 HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA 
 
 //--------init wiz820------------------
@@ -3639,6 +3722,8 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	CMD_search (&ID_SERV1,&SERV1);
 	SEND_UDP_MSG 	  ();
     UART_DMA_TX  	  ();
+	UART_DMA_TX2  	  ();
+	UART_CNTR   (&huart2);//тут управл€ем драйвером 485
 //	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	
   }
 
