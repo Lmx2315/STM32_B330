@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\temp_Pj1\temp_Pj1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\temp_Pj1\temp_Pj1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Thu Feb 04 15:56:38 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Fri Feb 05 13:31:49 2021
 <BR><P>
 <H3>Maximum Stack Usage =        320 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -920,7 +920,8 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[7b]"></a>HAL_GPIO_WritePin</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, stm32f4xx_hal_gpio.o(i.HAL_GPIO_WritePin))
-<BR><BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LED
+<BR><BR>[Called By]<UL><LI><a href="#[124]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_CNTR
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LED
 <LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IO
 <LI><a href="#[99]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_wSPI
 <LI><a href="#[97]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_rSPI
@@ -932,7 +933,6 @@ Global Symbols
 <LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[12d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;WATCH_DOG
 <LI><a href="#[129]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_DMA_TX2
-<LI><a href="#[124]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_CNTR
 <LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Update_IR
 <LI><a href="#[e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TLR
 <LI><a href="#[e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Shift_IR
@@ -1349,19 +1349,19 @@ Global Symbols
 <P><STRONG><a name="[e7]"></a>IINCHIP_CSoff</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, w5200.o(i.IINCHIP_CSoff))
 <BR><BR>[Calls]<UL><LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 </UL>
-<BR>[Called By]<UL><LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
+<BR>[Called By]<UL><LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
+<LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_WRITE
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_READ
-<LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
 </UL>
 
 <P><STRONG><a name="[e8]"></a>IINCHIP_CSon</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, w5200.o(i.IINCHIP_CSon))
 <BR><BR>[Calls]<UL><LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 </UL>
-<BR>[Called By]<UL><LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
+<BR>[Called By]<UL><LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
+<LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_WRITE
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_READ
-<LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
 </UL>
 
 <P><STRONG><a name="[e9]"></a>IINCHIP_READ</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, w5200.o(i.IINCHIP_READ))
@@ -1424,7 +1424,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[7c]"></a>IO</STRONG> (Thumb, 3282 bytes, Stack size 56 bytes, main.o(i.IO))
+<P><STRONG><a name="[7c]"></a>IO</STRONG> (Thumb, 3410 bytes, Stack size 56 bytes, main.o(i.IO))
 <BR><BR>[Stack]<UL><LI>Max Depth = 264<LI>Call Chain = IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ef]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf2
@@ -2220,7 +2220,8 @@ Global Symbols
 <P><STRONG><a name="[43]"></a>main</STRONG> (Thumb, 576 bytes, Stack size 0 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 320<LI>Call Chain = main &rArr; CMD_search &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf
+<BR>[Calls]<UL><LI><a href="#[124]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_CNTR
+<LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf
 <LI><a href="#[11f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 <LI><a href="#[7d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PWR_072
 <LI><a href="#[105]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Massiv_dbm
@@ -2252,7 +2253,6 @@ Global Symbols
 <LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_conrol
 <LI><a href="#[129]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_DMA_TX2
 <LI><a href="#[127]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_DMA_TX
-<LI><a href="#[124]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_CNTR
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> entry9a.o(.ARM.Collect$$$$0000000B)
 </UL>
@@ -2374,11 +2374,11 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_SPI_TransmitReceive
 </UL>
-<BR>[Called By]<UL><LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
+<BR>[Called By]<UL><LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
+<LI><a href="#[149]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_read_buf
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_WRITE
 <LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_SpiSendData
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IINCHIP_READ
-<LI><a href="#[14e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wiz_write_buf
 </UL>
 
 <P><STRONG><a name="[98]"></a>spi5send8</STRONG> (Thumb, 30 bytes, Stack size 16 bytes, main.o(i.spi5send8))

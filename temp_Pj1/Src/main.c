@@ -1531,6 +1531,16 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
+if (strcmp(Word,"rs485_test_OK")==0) // проверяем шину 485! Должен прийти ответ.
+   {
+	 u_out("принял rs485_test_OK:",crc_comp);
+	 Transf("тест 485 шины пройден успешно!\r\n");
+   } else	
+if (strcmp(Word,"rs485_test")==0) // проверяем шину 485! Должен прийти ответ.
+   {
+	 u_out("принял rs485_test:",crc_comp);
+	 Transf2("~0 rs485_test;");
+   } else
  if (strcmp(Word,"rs485_help")==0) // ~0 spi_write:adr.code;
    {
 	 u_out("принял rs485_help:",crc_comp);
@@ -1856,28 +1866,28 @@ void Menu1(char a)
   for (i=0;i<20;i++) Transf("\r");    // очистка терминала
   for (i=0; i<20; i++) Transf ("-");  // вывод приветствия
   Transf("\r");
-  Transf("..........Terminal Тестовой платы.........\r\n");
+  Transf("..........Terminal 330 кассеты.........\r\n");
   Transf("\r");
   Transf("MENU :\r");
   Transf("-------\r");
   Transf("Расшифровка структуры команды:\r");
   Transf("~ - стартовый байт\r");
-  Transf("1 - адрес абонента\r");
+  Transf("0 - адрес абонента\r");
   Transf(";- конец пачки \r");
   Transf(".............. \r");
   Transf("---------------------------------------------\r\n");
-  Transf("IP  :192.168.1.163 - IP адрес    блока\r");
+  Transf("IP  :1.3.1.60 - IP адрес    блока\r");
   Transf("PORT:2054          - номер порта блока\r");
   Transf("~0 help; - текущее меню\r");
   Transf("~0 info; - информация \r");
-  Transf("~0 dac1_init; - \r");
-  Transf("~0 dac1_r:0;   - чтение регистра\r");
-  Transf("~0 dac1_w:0.0; - запись регистра\r");
-  Transf("~0 dac1_serdes_pll:1; - очистка регистра сигнала захвата PLL Serdes\r");
-  Transf("~0 dac1_info:0; \r");
-  Transf("~0 dac1_init:0; \r");
-  Transf("~0 dac1_phy_wr:0; \r");
-  Transf("~0 dac1_phy_info; \r");
+  Transf("~0 rs485_test; - \r");
+  Transf("~0 JTAG_TST;   - тестирование JTAG\r");
+  Transf("~0 JTAG2_SCAN; - сканирование цепи JTAG\r");
+  Transf("~0 JTAG1_SCAN; - сканирование цепи JTAG\r");
+  Transf("~0 JTAG_ID; \r");
+  Transf("~0 time;       - вывод системного времени\r");
+  Transf("~0 sys_info; \r");
+  Transf("~0 start:1; \r");
   Transf("~0 lmk_sync; - sync на LMK\r");
   Transf("~0 init_lmk; - init на LMK\r");
   Transf("-------------------------------------------\r");
