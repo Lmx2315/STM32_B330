@@ -768,7 +768,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB12 PB9 */
-  GPIO_InitStruct.Pin   = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_9;
+  GPIO_InitStruct.Pin   = GPIO_PIN_0|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_9;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1531,6 +1531,14 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
+	
+if (strcmp(Word,"rst_072")==0) // проверяем шину 485! Должен прийти ответ.
+   {
+	 crc_comp =atoi(DATA_Word);	
+	 u_out("принял rst_072:",crc_comp);
+	 RESET_072(crc_comp);
+   } else
+   
 if (strcmp(Word,"rs485_test_OK")==0) // проверяем шину 485! Должен прийти ответ.
    {
 	 u_out("принял rs485_test_OK:",crc_comp);
@@ -3633,7 +3641,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 //  Delay(1000);
-
+	RESET_072(0);
 //------SETUP----------
 LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
 LM2.TEMP_max=5000;
@@ -3700,6 +3708,8 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 
 //  TCA_WR(255);//зажигаем все светодиоды на лицевой панели
 //-------------------------------------
+  RESET_072(1);//снимаем ресет 072 кассет
+  
   while (1)
   {
     /* USER CODE END WHILE */

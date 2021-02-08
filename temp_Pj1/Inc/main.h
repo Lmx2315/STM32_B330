@@ -113,6 +113,8 @@ typedef unsigned long uint32;
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
 
+#define PB0_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0,GPIO_PIN_RESET)
+#define PB0_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0,GPIO_PIN_SET)
 
 #define PB5_0  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET)
 #define PB5_1  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET)
@@ -257,6 +259,8 @@ typedef unsigned long uint32;
 //-----
 
 //----------------------
+
+#define RESET_072(a) ((a==1)?PB0_1 : PB0_0)
 
 #define VD3(a) ((a==1)?PC13_1 : PC13_0)
 #define VD4(a) ((a==1)?PC14_1 : PC14_0)
