@@ -2017,41 +2017,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 //	HAL_ADC_Start_IT(hadc1);
 }
 
-float DBm[335];
 
-void Massiv_dbm(void)
-{
-u16 i;
-float e;
- DBm[  9]=-25;
- DBm[ 10]=-24;
- DBm[ 11]=-23;
- DBm[ 12]=-22;
- DBm[ 13]=-21;
- DBm[ 15]=-20;
- DBm[ 24]=-15;
- DBm[ 41]=-10;
- DBm[ 70]=-5;
- DBm[130]= 0;
- DBm[230]= 5;
- DBm[330]= 8;
-
-for (i=  0;i<  9;i++) { e=-600+(i- 9)*6  ;   DBm[i]= e;}
-for (i=  9;i< 16;i++) { e=-250+(i- 9)*8.3;   DBm[i]= e;}
-for (i= 15;i< 25;i++) { e=-200+(i-15)* 5;    DBm[i]= e;}
-for (i= 24;i< 42;i++) { e=-150+(i-24)*2.7;   DBm[i]= e;}
-for (i= 41;i< 71;i++) { e=-100+(i-41)*1.7;   DBm[i]= e;}
-for (i= 70;i<131;i++) { e=-50 +(i- 70)*0.83; DBm[i]= e;}
-for (i=130;i<231;i++) { e=-0 +(i-130)*0.5;   DBm[i]= e;}
-for (i=230;i<334;i++) { e= 50 +(i-230)*0.29; DBm[i]= e;}
-
-for (i=0;i<334;i++) 
-         {
-           DBm[i]= DBm[i]/10;
-//		   un_out("DBm[",i);
-//	       f_out("]=",DBm[i]);
-         }
-}
 
 double ADC_Temp(double t)
 {
@@ -3679,7 +3645,7 @@ LM8.TEMP_max=5000;
   VD5(0);
   
  WDI_MK(0); 
- Massiv_dbm();
+
  
 HAL_UART_Receive_IT(&huart1,RX_uBUF,1);
 HAL_UART_Receive_IT(&huart2,RX_uBUF,1);
