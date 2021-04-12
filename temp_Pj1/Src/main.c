@@ -228,6 +228,8 @@ int TMP_v=0;
  CMD_RUN CMD1;
  ADR_SENDER ADDR_SNDR;			//структура хранит массив адресов ОТПРАВИТЕЛЕЙ 
 
+u64 ADRES_SENDER_CMD=0; //тут храним адрес компьютера управления, кто запрашивает у нас квитанции
+u8 FLAG_ADRES_SENDER_CMD=0;//флаг того что есть куда отправлять квитанции
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -2725,9 +2727,7 @@ u32 k //смещение данных в байтах от их начального положения
  return idx;
 }
 
-
-
-void CMD_search (ID_SERVER *id,SERVER *srv)
+void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 {
 	u32 i=0;
 	u32 idx0=0;
@@ -2739,61 +2739,11 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 	u32 idx6=0;
 	u32 idx7=0;
 	
-	u64 ADR=0;
+	u64 ADR=ADRES_SENDER_CMD;
 	u32 data=0;
 	u8 D[4];
 
-	for (i=0;i<SIZE_ID;i++)
-	{		
-		if (id->CMD_TYPE[i]==CMD_TIME_SETUP) 
-		{
-			Transf("\r\n------\r\n");
-			Transf("Команда:установка времени!\r\n");
-			
-			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
-			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
-			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
-			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
-			idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
-			idx5=idx_srv(id->INDEX[i],5);//индекс расположения данных в "хранилище"
-			idx6=idx_srv(id->INDEX[i],6);//индекс расположения данных в "хранилище"
-			idx7=idx_srv(id->INDEX[i],7);//индекс расположения данных в "хранилище"
-			
-			TIME_SYS=((u64)srv->MeM[idx0]<<56)|((u64)srv->MeM[idx1]<<48)|
-					 ((u64)srv->MeM[idx2]<<40)|((u64)srv->MeM[idx3]<<32)|
-					 ((u64)srv->MeM[idx4]<<24)|((u64)srv->MeM[idx5]<<16)|
-					 ((u64)srv->MeM[idx6]<< 8)|((u64)srv->MeM[idx7]<< 0);
-			IO("~0 time;");
-			Transf("\r\n------\r\n");		
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-			u_out("Номер отправителя:",ADR);
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-		}
-		
-		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
-		{
-			//нет данных у команды
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			
-			//------------------------------------
-			if (START_BP==1)
+	if (START_BP==1)
 			{
 			//	LM_MFR_ID(1);
 				
@@ -3302,6 +3252,77 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			D_TEMP,    		//данные сообщения - массив данных
 			TIME_SYS	  	//время составления квитанции
 			);
+}
+
+
+void CMD_search (ID_SERVER *id,SERVER *srv)
+{
+	u32 i=0;
+	u32 idx0=0;
+	u32 idx1=0;
+	u32 idx2=0;
+	u32 idx3=0;
+	u32 idx4=0;
+	u32 idx5=0;
+	u32 idx6=0;
+	u32 idx7=0;
+	
+	u64 ADR=0;
+	u32 data=0;
+	u8 D[4];
+
+	for (i=0;i<SIZE_ID;i++)
+	{		
+		if (id->CMD_TYPE[i]==CMD_TIME_SETUP) 
+		{
+			Transf("\r\n------\r\n");
+			Transf("Команда:установка времени!\r\n");
+			
+			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
+			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
+			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+			idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+			idx5=idx_srv(id->INDEX[i],5);//индекс расположения данных в "хранилище"
+			idx6=idx_srv(id->INDEX[i],6);//индекс расположения данных в "хранилище"
+			idx7=idx_srv(id->INDEX[i],7);//индекс расположения данных в "хранилище"
+			
+			TIME_SYS=((u64)srv->MeM[idx0]<<56)|((u64)srv->MeM[idx1]<<48)|
+					 ((u64)srv->MeM[idx2]<<40)|((u64)srv->MeM[idx3]<<32)|
+					 ((u64)srv->MeM[idx4]<<24)|((u64)srv->MeM[idx5]<<16)|
+					 ((u64)srv->MeM[idx6]<< 8)|((u64)srv->MeM[idx7]<< 0);
+			IO("~0 time;");
+			Transf("\r\n------\r\n");		
+			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+			u_out("Номер отправителя:",ADR);
+			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+			id,			    //указатель на реестр
+			&INVOICE[ADR],  //указатель на структуру квитанции
+			i, 			    //индекс команды в реестре
+			MSG_CMD_OK,	    //сообщение квитанции
+			0,				//данные квитанции
+			TIME_SYS	    //текущее системное время 
+			);	
+			SERV_ID_DEL (id,i);//удаляем команду из реестра
+		}
+		
+		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
+		{
+			//нет данных у команды
+			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+			ADRES_SENDER_CMD=ADR;
+//			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
+			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+			id,			    //указатель на реестр
+			&INVOICE[ADR],  //указатель на структуру квитанции
+			i, 			    //индекс команды в реестре
+			MSG_CMD_OK,	    //сообщение квитанции
+			0,				//данные квитанции
+			TIME_SYS	    //текущее системное время 
+			);	
+			
+			//------------------------------------
+			SYS_INFO_SEND_UDP (id,srv);
 			//-----------------------------------
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 			
@@ -3347,7 +3368,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			START_BP=data;//выполняем команду
 			
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
+			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
 			id,			    //указатель на реестр
 			&INVOICE[ADR],  //указатель на структуру квитанции
@@ -3433,7 +3454,7 @@ if (TIMER_LED>LED_INTERVAL)
 		{
 			TCA_WR(z);//выполняем команду
 			z0=z;
-			x_out("z:",z);
+//			x_out("z:",z);
 		}
 		TIMER_LED=0;
 	}
@@ -3645,7 +3666,6 @@ LM8.TEMP_max=5000;
   VD5(0);
   
  WDI_MK(0); 
-
  
 HAL_UART_Receive_IT(&huart1,RX_uBUF,1);
 HAL_UART_Receive_IT(&huart2,RX_uBUF,1);
@@ -3694,7 +3714,9 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	
 	if (EVENT_INT3==1)//контроль секундной метки T1HZ_MK
 	{
+		Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_T1HZ_MK==0) Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
+		if (FLAG_ADRES_SENDER_CMD==1) SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);//отсылаем квитанцию о нашем состоянии
 		EVENT_INT3=0;
 		FLAG_T1HZ_MK=1;
 		TIMER_T1HZ_MK=0;			

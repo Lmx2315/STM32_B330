@@ -415,13 +415,13 @@ uint32_t my_time;
  
 uint8 Enable_DHCP = OFF;
 
-#define         NB 1//!!!!!!!номер в цепи резервировния!!!!
+#define         NB 3//!!!!!!!номер в цепи резервировния!!!!
 u8 NUMBER_BLOK =NB; 
 
 uint8 MAC[6]     ={0x64, 0xA2, 0x32, 0x01, 0x03,NB};//MAC Address
-uint8 IP [4]     ={1, 3,  1,NB+60};//IP Address  
-uint8 GateWay[4] ={1, 3,  1, 254};// Gateway Address
-uint8 SubNet [4] ={255, 255, 255,  0};//SubnetMask Address
+uint8 IP [4]     ={1, 3,  2,NB+60};//IP Address  
+uint8 GateWay[4] ={1, 3,  2, 253};// Gateway Address
+uint8 SubNet [4] ={255, 255, 0,  0};//SubnetMask Address
 
 /* 
 uint8 Enable_DHCP = ON;
@@ -2259,7 +2259,8 @@ u32 SEND_UDP_MSG (void)
 	  if (INVOICE[i].MSG.Num_cmd_in_msg>0) 
 	  {
 		 error=TX_MSG_BUFF (&INVOICE[i],TX_BUF,TX_MAX_BUF_SIZE);//заполняем транспортный массив
-		 SEND_udp(0, 3001,destip_UDP,1000);//отправляем квитанцию по UDP			
+		 SEND_udp(0, 3001,destip_UDP,1000);//отправляем квитанцию по UDP	
+		 x_out("IP  :",destip_UDP);		
 	  }
 	}
 }
