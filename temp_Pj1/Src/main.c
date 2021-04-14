@@ -70,6 +70,8 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
+u64 STM32_VERSION = 0x140420211039;//номер версии прошивки 10-52 время и 02-04-2021 дата
+
 u32 TIMER_CONTROL_SYS;   		//переменная таймера контроля состояния системы блока питания
 
 volatile  uint16_t adcBuffer[5]; // Buffer for store the results of the ADC conversion
@@ -217,6 +219,7 @@ LM_struct LM1,LM2,LM3,LM4,LM5,LM6,LM7,LM8;
 u8 LM_ID_CN[8];
 u8 D_TEMP[4];
 int TMP_v=0;
+
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -1424,6 +1427,7 @@ void info ()
 
 u32 crc_input=0u; 
 u32 crc_comp=0u;
+u8 Str[10];
 
 u32 IO ( char* str)      // функция обработки протокола обмена
 {
@@ -1533,14 +1537,46 @@ if (packet_ok==1u)
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
-	
-if (strcmp(Word,"rst_072")==0) // проверяем шину 485! Должен прийти ответ.
+  if (strcmp(Word,"versiya")==0) //
+   {
+    Transf ("принял versiya\r\n"); 
+    REQ_VERSIYA();       
+   } else
+if (strcmp(Word,"setup_IP0")==0) // отсылаем IP адрес по шине 485 в 072
+   {
+
+	 crc_comp =atoi(DATA_Word);	//первое число - адресс касеты на бекплейне
+ 	 crc_input=atoi(DATA_Word2);//второе число - IP адресс
+	 
+	 Str[ 0]='~';
+	 Str[ 1]=0x30+(crc_comp&0xff);
+	 Str[ 2]='s';
+	 Str[ 3]='s';
+	 Str[ 4]='e';
+	 Str[ 5]='t';
+	 Str[ 6]='u';
+	 Str[ 7]='p';
+	 Str[ 8]='_';
+	 Str[ 9]='I';
+	 Str[10]='P';
+	 Str[11]='0';
+	 Str[12]=':';
+	 Str[13]=(crc_input>>24);
+	 Str[14]=(crc_input>>16);
+	 Str[15]=(crc_input>> 8);
+	 Str[16]=(crc_input>> 0);
+	 Str[17]=';';
+	 Str[18]=0x00;
+
+	 u_out("принял setup_IP0:",crc_input);
+	 Transf2(Str);
+   } else
+if (strcmp(Word,"rst_072")==0) // 
    {
 	 crc_comp =atoi(DATA_Word);	
 	 u_out("принял rst_072:",crc_comp);
 	 RESET_072(crc_comp);
-   } else
-   
+   } else   
 if (strcmp(Word,"rs485_test_OK")==0) // проверяем шину 485! Должен прийти ответ.
    {
 	 u_out("принял rs485_test_OK:",crc_comp);
@@ -1972,11 +2008,9 @@ void UART_conrol (void)
 
 
 void LED (void)
-{
-	
+{	
 	if ((TIMER1<100)&&(FLAG_T1==0)) 
-	{
-		
+	{		
 		VD3(1);
 		VD4(0);
 		VD5(0);
@@ -2038,8 +2072,7 @@ void ADC_test (void)
 	adc_ch[ 1] = ((float)adcBuffer[1])*3.3/4096*2;
 	adc_ch[ 2] = ((float)adcBuffer[2])*3.3*5.71428/4096;//12 Вольт делитель 47к-10к
 	adc_ch[ 3] = ((float)adcBuffer[3])*3.3/4096*2;
-	adc_ch[ 4] = ((float)adcBuffer[4])*3.3/4096;
-	
+	adc_ch[ 4] = ((float)adcBuffer[4])*3.3/4096;	
 	
 	Transf("\r\n---------\r\n");
 	f_out("adc0_5.0V     :",adc_ch[0 ]);
@@ -2053,8 +2086,7 @@ void ADC_test (void)
 	u_out("adc1_3.3V     :",adcBuffer[1 ]);
 	u_out("adc2_12V      :",adcBuffer[2 ]);
 	u_out("adc3_3.3V     :",adcBuffer[3 ]);
-	u_out("temp_sens(С)  :",adcBuffer[4 ]);
-	
+	u_out("temp_sens(С)  :",adcBuffer[4 ]);	
 }
 
 u8 FLAG_WDG=0;
@@ -2066,14 +2098,10 @@ void DMA_ADC (void)
 }
 
 void WATCH_DOG (void)
-{
-	
-	if (FLAG_WDG==0) {FLAG_WDG=1;} else FLAG_WDG=0;
-	
+{	
+	if (FLAG_WDG==0) {FLAG_WDG=1;} else FLAG_WDG=0;	
 	WDI_MK(FLAG_WDG);	
 }
-
-
 
 /* USER CODE END 0 */
 
@@ -3408,6 +3436,33 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 			u_out("управляем питание каналов:",data);
 		}
+
+		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда включения канала питания, исправить длинну данных команды!!!
+		{
+			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
+			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
+			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+			idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+		//----------------------------------------------------------------------------------	
+			data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+			
+			SETUP_IP_072 (idx0,data);//выполняем команду			
+		
+			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+
+			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+			id,			    //указатель на реестр
+			&INVOICE[ADR],  //указатель на структуру квитанции
+			i, 			    //индекс команды в реестре
+			MSG_CMD_OK,	    //сообщение квитанции
+			0,				//данные квитанции
+			TIME_SYS	    //текущее системное время 
+			);	
+			SERV_ID_DEL (id,i);//удаляем команду из реестра
+			u_out("отправляем IP адрес:",data);
+			u_out("В блок 072 №",idx0);
+		}
 		
 	//	if (id->TIME<TIME_SYS)
 	}
@@ -3588,6 +3643,31 @@ void UART_CNTR (UART_HandleTypeDef *huart)
 		DE_RS485 (0);//выключаем буфер 485 на передачу
 	}
 }  
+
+void SETUP_IP_072 (u8 adr,u32 ip)
+{
+  u8 a[64];
+  for (int i=0;i<64;i++) a[i]=0;
+
+   strcpy(a,"~");  
+   sprintf (strng,"%x",adr); 
+   strcpy(a,strng);
+   strcpy(a," setup_IP0:");
+   sprintf (strng,"%x",ip);
+   strcat(a,strng);
+   strcat(a,";\r\n");
+   Transf2(a);
+}
+
+void REQ_VERSIYA (void)
+{
+  u32 tmp0,tmp1;
+  tmp0=STM32_VERSION>>16;   //тут дата
+  tmp1=STM32_VERSION&0xffff;//тут время
+  Transf("----------------------\r\n");
+  Transf("версия прошивки STM32:\r\n");
+  xn_out("Дата:",tmp0);Transf("  ");x_out("Время:",tmp1); 
+}
 
 int main(void)
 {

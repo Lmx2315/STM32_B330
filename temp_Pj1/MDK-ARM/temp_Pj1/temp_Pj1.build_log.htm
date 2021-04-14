@@ -27,121 +27,193 @@ Project File Date:  12/28/2020
 <h2>Output:</h2>
 Build target 'temp_Pj1'
 compiling main.c...
-../Src/main.c(1155): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1158): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",z);
-../Src/main.c(1157): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1160): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",a);
-../Src/main.c(1172): warning:  #177-D: variable "k" was declared but never referenced
+../Src/main.c(1175): warning:  #177-D: variable "k" was declared but never referenced
    uint16_t k;
-../Src/main.c(1592): warning:  #223-D: function "TST" declared implicitly
+../Src/main.c(1561): warning:  #175-D: subscript out of range
+         Str[10]='P';
+../Src/main.c(1562): warning:  #175-D: subscript out of range
+         Str[11]='0';
+../Src/main.c(1563): warning:  #175-D: subscript out of range
+         Str[12]=':';
+../Src/main.c(1564): warning:  #175-D: subscript out of range
+         Str[13]=(crc_input>>24);
+../Src/main.c(1565): warning:  #175-D: subscript out of range
+         Str[14]=(crc_input>>16);
+../Src/main.c(1566): warning:  #175-D: subscript out of range
+         Str[15]=(crc_input>> 8);
+../Src/main.c(1567): warning:  #175-D: subscript out of range
+         Str[16]=(crc_input>> 0);
+../Src/main.c(1568): warning:  #175-D: subscript out of range
+         Str[17]=';';
+../Src/main.c(1569): warning:  #175-D: subscript out of range
+         Str[18]=0x00;
+../Src/main.c(1572): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+         Transf2(Str);
+../Src/main.c(1628): warning:  #223-D: function "TST" declared implicitly
          TST ();
-../Src/main.c(1603): warning:  #175-D: subscript out of range
+../Src/main.c(1639): warning:  #175-D: subscript out of range
                         list[2]=10;
-../Src/main.c(1604): warning:  #175-D: subscript out of range
+../Src/main.c(1640): warning:  #175-D: subscript out of range
                         list[3]=10;
-../Src/main.c(1605): warning:  #175-D: subscript out of range
+../Src/main.c(1641): warning:  #175-D: subscript out of range
                         list[4]=10;
-../Src/main.c(1606): warning:  #175-D: subscript out of range
+../Src/main.c(1642): warning:  #175-D: subscript out of range
                         list[5]=10;
-../Src/main.c(1607): warning:  #175-D: subscript out of range
+../Src/main.c(1643): warning:  #175-D: subscript out of range
                         list[6]=10;
-../Src/main.c(1608): warning:  #175-D: subscript out of range
+../Src/main.c(1644): warning:  #175-D: subscript out of range
                         list[7]=10;
-../Src/main.c(1611): warning:  #223-D: function "jtag_scan" declared implicitly
+../Src/main.c(1647): warning:  #223-D: function "jtag_scan" declared implicitly
          crc_comp=jtag_scan(NULL,crc_comp); 
-../Src/main.c(1600): warning:  #550-D: variable "list" was set but never used
+../Src/main.c(1636): warning:  #550-D: variable "list" was set but never used
                  u8 list[2]; //массив длин IR регистров - их число должно быть по числу устройств на шине 
-../Src/main.c(2037): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+../Src/main.c(2071): warning:  #1035-D: single-precision operand implicitly converted to double-precision
         adc_ch[ 0] = ((float)adcBuffer[0])*3.3/4096*2;
-../Src/main.c(2038): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+../Src/main.c(2072): warning:  #1035-D: single-precision operand implicitly converted to double-precision
         adc_ch[ 1] = ((float)adcBuffer[1])*3.3/4096*2;
-../Src/main.c(2039): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+../Src/main.c(2073): warning:  #1035-D: single-precision operand implicitly converted to double-precision
         adc_ch[ 2] = ((float)adcBuffer[2])*3.3*5.71428/4096;//12 Вольт делитель 47к-10к
-../Src/main.c(2040): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+../Src/main.c(2074): warning:  #1035-D: single-precision operand implicitly converted to double-precision
         adc_ch[ 3] = ((float)adcBuffer[3])*3.3/4096*2;
-../Src/main.c(2041): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-        adc_ch[ 4] = ((float)adcBuffer[4])*3.3/4096;
-../Src/main.c(2158): warning:  #550-D: variable "error" was set but never used
+../Src/main.c(2075): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+        adc_ch[ 4] = ((float)adcBuffer[4])*3.3/4096;    
+../Src/main.c(2186): warning:  #550-D: variable "error" was set but never used
          u32 error=0;
-../Src/main.c(2207): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2235): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
                 HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,1,1);
-../Src/main.c(2198): warning:  #177-D: variable "error" was declared but never referenced
+../Src/main.c(2226): warning:  #177-D: variable "error" was declared but never referenced
          u32 error=0;
-../Src/main.c(2242): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2270): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
                 HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size2,1);
-../Src/main.c(2339): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2367): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
          error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size2,1);
-../Src/main.c(2318): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2346): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2448): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2476): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
                 error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2418): warning:  #177-D: variable "state" was declared but never referenced
+../Src/main.c(2446): warning:  #177-D: variable "state" was declared but never referenced
          uint8_t state=1;
-../Src/main.c(2419): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2447): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2517): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2545): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
                 error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2487): warning:  #177-D: variable "state" was declared but never referenced
+../Src/main.c(2515): warning:  #177-D: variable "state" was declared but never referenced
          uint8_t state=1;
-../Src/main.c(2488): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2516): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2586): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2614): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
         error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2561): warning:  #177-D: variable "state" was declared but never referenced
+../Src/main.c(2589): warning:  #177-D: variable "state" was declared but never referenced
          uint8_t state=1;
-../Src/main.c(2562): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2590): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2640): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2668): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
         error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2615): warning:  #177-D: variable "state" was declared but never referenced
+../Src/main.c(2643): warning:  #177-D: variable "state" was declared but never referenced
          uint8_t state=1;
-../Src/main.c(2616): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2644): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2694): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
+../Src/main.c(2722): warning:  #223-D: function "HAL_I2C_Master_SMBA_block_recieve" declared implicitly
         error=HAL_I2C_Master_SMBA_block_recieve(&hi2c1,(DevAddress<<1),c,1,a,Size,1);
-../Src/main.c(2669): warning:  #177-D: variable "state" was declared but never referenced
+../Src/main.c(2697): warning:  #177-D: variable "state" was declared but never referenced
          uint8_t state=1;
-../Src/main.c(2670): warning:  #177-D: variable "v" was declared but never referenced
+../Src/main.c(2698): warning:  #177-D: variable "v" was declared but never referenced
          uint8_t v=0;
-../Src/main.c(2733): warning:  #177-D: variable "idx0" was declared but never referenced
+../Src/main.c(2761): warning:  #177-D: variable "idx0" was declared but never referenced
         u32 idx0=0;
-../Src/main.c(2734): warning:  #177-D: variable "idx1" was declared but never referenced
+../Src/main.c(2762): warning:  #177-D: variable "idx1" was declared but never referenced
         u32 idx1=0;
-../Src/main.c(2735): warning:  #177-D: variable "idx2" was declared but never referenced
+../Src/main.c(2763): warning:  #177-D: variable "idx2" was declared but never referenced
         u32 idx2=0;
-../Src/main.c(2736): warning:  #177-D: variable "idx3" was declared but never referenced
+../Src/main.c(2764): warning:  #177-D: variable "idx3" was declared but never referenced
         u32 idx3=0;
-../Src/main.c(2737): warning:  #177-D: variable "idx4" was declared but never referenced
+../Src/main.c(2765): warning:  #177-D: variable "idx4" was declared but never referenced
         u32 idx4=0;
-../Src/main.c(2738): warning:  #177-D: variable "idx5" was declared but never referenced
+../Src/main.c(2766): warning:  #177-D: variable "idx5" was declared but never referenced
         u32 idx5=0;
-../Src/main.c(2739): warning:  #177-D: variable "idx6" was declared but never referenced
+../Src/main.c(2767): warning:  #177-D: variable "idx6" was declared but never referenced
         u32 idx6=0;
-../Src/main.c(2740): warning:  #177-D: variable "idx7" was declared but never referenced
+../Src/main.c(2768): warning:  #177-D: variable "idx7" was declared but never referenced
         u32 idx7=0;
-../Src/main.c(2743): warning:  #177-D: variable "data" was declared but never referenced
+../Src/main.c(2771): warning:  #177-D: variable "data" was declared but never referenced
         u32 data=0;
-../Src/main.c(2744): warning:  #177-D: variable "D" was declared but never referenced
+../Src/main.c(2772): warning:  #177-D: variable "D" was declared but never referenced
         u8 D[4];
-../Src/main.c(3272): warning:  #177-D: variable "D" was declared but never referenced
+../Src/main.c(3300): warning:  #177-D: variable "D" was declared but never referenced
         u8 D[4];
-../Src/main.c(3428): warning:  #177-D: variable "val" was declared but never referenced
+../Src/main.c(3483): warning:  #177-D: variable "val" was declared but never referenced
         u8 val=0;
-../Src/main.c(3690): warning:  #223-D: function "RECEIVE_udp" declared implicitly
+../Src/main.c(3652): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcpy(a,"~");  
+../Src/main.c(3654): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcpy(a,strng);
+../Src/main.c(3655): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcpy(a," setup_IP0:");
+../Src/main.c(3657): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcat(a,strng);
+../Src/main.c(3658): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcat(a,";\r\n");
+../Src/main.c(3659): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+     Transf2(a);
+../Src/main.c(3770): warning:  #223-D: function "RECEIVE_udp" declared implicitly
    RECEIVE_udp(0, 3001,1);
-../Src/main.c(845): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
+../Src/main.c(848): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
   static void MX_TIM4_Init(void)
-../Src/main.c(466): warning:  #177-D: function "MX_SPI2_Init" was declared but never referenced
+../Src/main.c(469): warning:  #177-D: function "MX_SPI2_Init" was declared but never referenced
   static void MX_SPI2_Init(void)
-../Src/main.c(504): warning:  #177-D: function "MX_SPI3_Init" was declared but never referenced
+../Src/main.c(507): warning:  #177-D: function "MX_SPI3_Init" was declared but never referenced
   static void MX_SPI3_Init(void)
-../Src/main.c(685): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
+../Src/main.c(688): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
   static void MX_USART6_UART_Init(void)
-../Src/main.c: 55 warnings, 0 errors
+../Src/main.c: 71 warnings, 0 errors
+compiling stm32f4xx_it.c...
+compiling stm32f4xx_hal_msp.c...
+compiling W5200.c...
+..\Src\W5200.c(1816): warning:  #177-D: variable "RSR_len" was declared but never referenced
+         int16 RSR_len;
+..\Src\W5200.c(1817): warning:  #177-D: variable "received_len" was declared but never referenced
+      uint16 received_len;
+..\Src\W5200.c(1818): warning:  #177-D: variable "lsr" was declared but never referenced
+        uint32 lsr=0;
+..\Src\W5200.c(2266): warning:  #940-D: missing return statement at end of non-void function "SEND_UDP_MSG"
+  }
+..\Src\W5200.c(2255): warning:  #550-D: variable "error" was set but never used
+        u32 error=0;
+..\Src\W5200.c: 5 warnings, 0 errors
+compiling adiv5_jtagdp.c...
+..\Src\adiv5_jtagdp.c(193): warning:  #550-D: variable "ack" was set but never used
+        uint8_t ack;
+..\Src\adiv5_jtagdp.c(194): warning:  #177-D: variable "timeout" was declared but never referenced
+        platform_timeout timeout;
+..\Src\adiv5_jtagdp.c(234): warning:  #1-D: last line of file ends without a newline
+  }
+..\Src\adiv5_jtagdp.c(222): warning:  #177-D: variable "addr" was declared but never referenced
+        uint16_t addr=0x8;// (СЃС‚СЂР°РЅРёС†Р° 2-41 IHI0031C_debug_interface_as.pdf)
+..\Src\adiv5_jtagdp.c(176): warning:  #177-D: function "adiv5_jtagdp_error" was declared but never referenced
+  static uint32_t adiv5_jtagdp_error(jtag_dev_t *dp)
+..\Src\adiv5_jtagdp.c(211): warning:  #177-D: function "adiv5_jtagdp_abort" was declared but never referenced
+  static void adiv5_jtagdp_abort(jtag_dev_t *dp, uint32_t abort)
+..\Src\adiv5_jtagdp.c: 6 warnings, 0 errors
+compiling jtag_scan.c...
+..\Src\jtag_scan.c(198): warning:  #68-D: integer conversion resulted in a change of sign
+                                jtag_devs[i].current_ir = -1;
+..\Src\jtag_scan.c(58): warning:  #177-D: variable "z" was declared but never referenced
+        uint16_t z=0;
+..\Src\jtag_scan.c(226): warning:  #68-D: integer conversion resulted in a change of sign
+                jtag_devs[i].current_ir = -1;
+..\Src\jtag_scan.c: 3 warnings, 0 errors
+compiling jtagtap.c...
+compiling jtag_devs.c...
+compiling crc32.c...
+compiling jtag_my.c...
 linking...
-Program Size: Code=43604 RO-data=1888 RW-data=332 ZI-data=40396  
+Program Size: Code=44300 RO-data=1888 RW-data=332 ZI-data=40412  
 FromELF: creating hex file...
-".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 55 Warning(s).
+".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 85 Warning(s).
 
 <h2>Software Packages used:</h2>
 
