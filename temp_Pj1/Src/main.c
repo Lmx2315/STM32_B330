@@ -3323,6 +3323,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			Transf("\r\n------\r\n");		
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 			u_out("Номер отправителя:",ADR);
+
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
 			id,			    //указатель на реестр
 			&INVOICE[ADR],  //указатель на структуру квитанции
@@ -3397,6 +3398,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
+
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
 			id,			    //указатель на реестр
 			&INVOICE[ADR],  //указатель на структуру квитанции
@@ -3437,31 +3439,35 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			u_out("управляем питание каналов:",data);
 		}
 
-		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда включения канала питания, исправить длинну данных команды!!!
+		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда установки IP0 адреса определённой кассеты 072 
 		{
-			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
-			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
+			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
+			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
 			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
 			idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
 		//----------------------------------------------------------------------------------	
 			data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
-			
-			SETUP_IP_072 (idx0,data);//выполняем команду			
+      int adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+
+			SETUP_IP_072 (adr_BPL,data);//выполняем команду
+
+      x_out("отправляем IP адрес:",data);
+      u_out("В блок 072 №",adr_BPL);			
 		
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
+			id,			        //указатель на реестр
 			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
+			i, 			        //индекс команды в реестре
 			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
+			0,				      //данные квитанции
+			TIME_SYS	      //текущее системное время 
 			);	
+
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			u_out("отправляем IP адрес:",data);
-			u_out("В блок 072 №",idx0);
+
 		}
 		
 	//	if (id->TIME<TIME_SYS)
@@ -3649,13 +3655,15 @@ void SETUP_IP_072 (u8 adr,u32 ip)
   u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
 
-   strcpy(a,"~");  
-   sprintf (strng,"%x",adr); 
-   strcpy(a,strng);
-   strcpy(a," setup_IP0:");
-   sprintf (strng,"%x",ip);
+   strcpy(a,"~0 setup_IP0:");  
+   sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");
+
+
+   Transf ("Отправляем на бекплейн:");
+   Transf (a);
+   Transf ("\r\n");
    Transf2(a);
 }
 
@@ -3794,7 +3802,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	
 	if (EVENT_INT3==1)//контроль секундной метки T1HZ_MK
 	{
-		Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
+		//Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_T1HZ_MK==0) Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_ADRES_SENDER_CMD==1) SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);//отсылаем квитанцию о нашем состоянии
 		EVENT_INT3=0;
@@ -3803,13 +3811,13 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	}; 
 	
 	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
-    CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
-	CONTROL_POK 	  ();
-	LED_CONTROL 	  ();
+  CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
+	CONTROL_POK 	    ();
+	LED_CONTROL 	    ();
 	CONTROL_T1HZ_MK   ();
 	CMD_search (&ID_SERV1,&SERV1);
-	SEND_UDP_MSG 	  ();
-    UART_DMA_TX  	  ();
+	SEND_UDP_MSG 	    ();
+  UART_DMA_TX  	    ();
 	UART_DMA_TX2  	  ();
 	UART_CNTR   (&huart2);//тут управляем драйвером 485
 //	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	

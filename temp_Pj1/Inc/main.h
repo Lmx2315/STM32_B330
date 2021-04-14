@@ -352,10 +352,10 @@ typedef unsigned long uint32;
  */
 
 
-#define MSG_REPLY     1
-#define MSG_ERROR   2
-#define ERROR_CMD_BUF   1   //были затёртые команды в буфере
-#define MSG_CMD_OK    3   //команда выполненна успешно
+#define MSG_REPLY       1
+#define MSG_ERROR       2
+#define ERROR_CMD_BUF   1 //были затёртые команды в буфере
+#define MSG_CMD_OK      3 //команда выполненна успешно
 #define MSG_STATUS_OK 100 //Квитация на статус
 
 #define MSG_ID_CH1    101 //сообщаем ID миксросхемы LM в канале 1
@@ -404,26 +404,28 @@ typedef unsigned long uint32;
 #define MSG_P_CH8     148 //
 
 #define MSG_PWR_CHANNEL 150 //сообщаем состояние линий питания каналов
-
+#define MSG_REQ_VERSION 109 //сообщаем 	номер версии
 
 
 //---------команды управления---------------------------------------------
 #define CMD_TIME_SETUP       1   //команда установки точного времени, реалтайм.
-#define CMD_HELP         2   //вывести в консоль HELP()
-#define CMD_TIME         0   //вывести в консоль текущее время
-#define CMD_12V          3   //включить - 1 , выключить - 0 питание +12 Вольт
+#define CMD_HELP             2   //вывести в консоль HELP()
+#define CMD_TIME             0   //вывести в консоль текущее время
+#define CMD_12V              3   //включить - 1 , выключить - 0 питание +12 Вольт
 #define CMD_STATUS         100 //сообщите состояние
-#define CMD_LED          200 //команда управления светодиодами лицевой панели
-#define CMD_xxx          300
-#define CMD_CH_UP        4   //команда включения/выключения каналов питания , канал в данных передаётся (вкл/выкл - инверсные коды)
+#define CMD_LED            200 //команда управления светодиодами лицевой панели
+#define CMD_xxx            300
+#define CMD_CH_UP            4   //команда включения/выключения каналов питания , канал в данных передаётся (вкл/выкл - инверсные коды)
 #define CMD_SETUP_IP0        5   //команда установки IP0 адреса блока 072
 #define CMD_SETUP_IP1        6   //команда установки IP0 адреса блока 072
 #define CMD_SETUP_DEST_IP0   7   //команда установки DEST_IP0 адреса блока 072
 #define CMD_SETUP_DEST_IP1   8   //команда установки DEST_IP1 адреса блока 072
+#define CMD_REQ_VERSION      9   //команда запроса номера версии ПО
+
 //------------------------------------------------------------------------
  
 #define SIZE_SERVER   4096//размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
-#define SIZE_ID      32 //размер реестра  
+#define SIZE_ID        32 //размер реестра  
 #define quantity_CMD   64 //максимальное количество команд 
 #define quantity_DATA  16 //максимальная длинна данных
 #define quantity_SENDER 2 //максимальное количество адресатов

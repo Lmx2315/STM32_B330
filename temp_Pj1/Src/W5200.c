@@ -2260,7 +2260,7 @@ u32 SEND_UDP_MSG (void)
 	  {
 		 error=TX_MSG_BUFF (&INVOICE[i],TX_BUF,TX_MAX_BUF_SIZE);//заполняем транспортный массив
 		 SEND_udp(0, 3001,destip_UDP,1000);//отправляем квитанцию по UDP	
-		 x_out("IP  :",destip_UDP);		
+		 //x_out("IP_dest  <revers byte`s!>:",destip_UDP);		
 	  }
 	}
 }
