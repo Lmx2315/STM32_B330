@@ -3459,8 +3459,9 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
       int adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
 
-			SETUP_IP_072 (adr_BPL,data);//выполн€ем команду
-
+			//SETUP_IP0_072 (adr_BPL,data);//выполн€ем команду
+      SETUP_IP0_072 (ADR_SLAVE[0],data);//выполн€ем команду
+      Transf("ѕришЄл IP0 дл€ ћастера 072!\r\n");
       x_out("отправл€ем IP адрес:",data);
       u_out("¬ блок 072 є",adr_BPL);			
 		
@@ -3478,6 +3479,36 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			SERV_ID_DEL (id,i);//удал€ем команду из реестра
 
 		} else
+      if (id->CMD_TYPE[i]==CMD_SETUP_IP1)//команда установки IP0 адреса определЄнной кассеты 072 
+    {
+      idx0=idx_srv(id->INDEX[i],0);//индекс расположени€ данных в "хранилище" 
+      idx1=idx_srv(id->INDEX[i],1);//индекс расположени€ данных в "хранилище" //в младшем адресе наход€тс€ старшие байты числа!!!
+      idx2=idx_srv(id->INDEX[i],2);//индекс расположени€ данных в "хранилище"
+      idx3=idx_srv(id->INDEX[i],3);//индекс расположени€ данных в "хранилище"
+      idx4=idx_srv(id->INDEX[i],4);//индекс расположени€ данных в "хранилище"
+    //----------------------------------------------------------------------------------  
+      data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+      int adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+
+      SETUP_IP1_072 (ADR_SLAVE[0],data);//выполн€ем команду
+      Transf("ѕришЄл IP1 дл€ ћастера 072!\r\n");
+      x_out("отправл€ем IP адрес:",data);
+      u_out("¬ блок 072 є",adr_BPL);      
+    
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем пор€дковый номер отправител€ в структуре отправителей, если его там нет  - то заносим туда
+
+      ERROR_CMD_MSG ( //заполн€ем квитанцию о выполнении команды
+      id,             //указатель на реестр
+      &INVOICE[ADR],  //указатель на структуру квитанции
+      i,              //индекс команды в реестре
+      MSG_CMD_OK,     //сообщение квитанции
+      0,              //данные квитанции
+      TIME_SYS        //текущее системное врем€ 
+      );  
+
+      SERV_ID_DEL (id,i);//удал€ем команду из реестра
+
+    } else
 
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
@@ -3679,12 +3710,31 @@ void UART_CNTR (UART_HandleTypeDef *huart)
 	}
 }  
 
-void SETUP_IP_072 (u8 adr,u32 ip)
+void SETUP_IP0_072 (u8 adr,u32 ip)
 {
   u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
 
-   strcpy(a,"~0 setup_IP0:");  
+   strcpy(a,"~0 setup_IP0:"); 
+   a[1]= adr+0x30;
+   sprintf (strng,"%d",ip);
+   strcat(a,strng);
+   strcat(a,";\r\n");
+
+
+   Transf ("ќтправл€ем на бекплейн:");
+   Transf (a);
+   Transf ("\r\n");
+   Transf2(a);
+}
+
+void SETUP_IP1_072 (u8 adr,u32 ip)
+{
+  u8 a[64];
+  for (int i=0;i<64;i++) a[i]=0;
+
+   strcpy(a,"~0 setup_IP1:"); 
+   a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");

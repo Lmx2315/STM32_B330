@@ -27,7 +27,7 @@ Project File Date:  12/28/2020
 <h2>Output:</h2>
 Build target 'temp_Pj1'
 compiling main.c...
-../Inc/main.h(570): warning:  #1295-D: Deprecated declaration req_col - give arg types
+../Inc/main.h(571): warning:  #1295-D: Deprecated declaration req_col - give arg types
   void req_col ();
 ../Src/main.c(1159): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",z);
@@ -147,19 +147,29 @@ compiling main.c...
         u8 D[4];
 ../Src/main.c(3309): warning:  #177-D: variable "D" was declared but never referenced
         u8 D[4];
-../Src/main.c(3518): warning:  #177-D: variable "val" was declared but never referenced
+../Src/main.c(3549): warning:  #177-D: variable "val" was declared but never referenced
         u8 val=0;
-../Src/main.c(3687): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcpy(a,"~0 setup_IP0:");  
-../Src/main.c(3689): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+../Src/main.c(3718): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcpy(a,"~0 setup_IP0:"); 
+../Src/main.c(3721): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
      strcat(a,strng);
-../Src/main.c(3690): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+../Src/main.c(3722): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
      strcat(a,";\r\n");
-../Src/main.c(3694): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+../Src/main.c(3726): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
      Transf (a);
-../Src/main.c(3696): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+../Src/main.c(3728): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
      Transf2(a);
-../Src/main.c(3849): warning:  #223-D: function "RECEIVE_udp" declared implicitly
+../Src/main.c(3736): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcpy(a,"~0 setup_IP1:"); 
+../Src/main.c(3739): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcat(a,strng);
+../Src/main.c(3740): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
+     strcat(a,";\r\n");
+../Src/main.c(3744): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+     Transf (a);
+../Src/main.c(3746): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+     Transf2(a);
+../Src/main.c(3899): warning:  #223-D: function "RECEIVE_udp" declared implicitly
    RECEIVE_udp(0, 3001,1);
 ../Src/main.c(849): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
   static void MX_TIM4_Init(void)
@@ -169,11 +179,11 @@ compiling main.c...
   static void MX_SPI3_Init(void)
 ../Src/main.c(689): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
   static void MX_USART6_UART_Init(void)
-../Src/main.c: 71 warnings, 0 errors
+../Src/main.c: 76 warnings, 0 errors
 linking...
-Program Size: Code=44616 RO-data=1888 RW-data=348 ZI-data=40412  
+Program Size: Code=44984 RO-data=1888 RW-data=348 ZI-data=40412  
 FromELF: creating hex file...
-".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 71 Warning(s).
+".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 76 Warning(s).
 
 <h2>Software Packages used:</h2>
 
