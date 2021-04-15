@@ -403,9 +403,9 @@ typedef unsigned long uint32;
 #define MSG_P_CH7     147 //
 #define MSG_P_CH8     148 //
 
-#define MSG_PWR_CHANNEL 150 //сообщаем состояние линий питания каналов
-#define MSG_REQ_VERSION 109 //сообщаем 	номер версии
-
+#define MSG_PWR_CHANNEL   150 //сообщаем состояние линий питания каналов
+#define MSG_REQ_VERSION   109 //сообщаем 	номер версии
+#define MSG_REQ_NUM_SLAVE 110 //сообщаем  количество слейвов в блоке и их адреса
 
 //---------команды управления---------------------------------------------
 #define CMD_TIME_SETUP       1   //команда установки точного времени, реалтайм.
@@ -421,6 +421,7 @@ typedef unsigned long uint32;
 #define CMD_SETUP_DEST_IP0   7   //команда установки DEST_IP0 адреса блока 072
 #define CMD_SETUP_DEST_IP1   8   //команда установки DEST_IP1 адреса блока 072
 #define CMD_REQ_VERSION      9   //команда запроса номера версии ПО
+#define CMD_REQ_NUM_SLAVE   10   //команда запроса количества блоков 072 в АЦ и их адресов
 
 //------------------------------------------------------------------------
  
@@ -565,6 +566,8 @@ u32 SEND_UDP_MSG (void);
 u8 DS4520_read (void);
 void SETUP_IP_072 (u8 ,u32);
 void REQ_VERSIYA (void);
+void answer_translated (u32 );
+void req_col ();
 //-------------JTAG--------------
 void JTAG_SCAN (void);
 u8 SCAN_N (void);

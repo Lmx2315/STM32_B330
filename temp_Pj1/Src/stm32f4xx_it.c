@@ -64,6 +64,7 @@ extern u64 TIME_SYS;
 extern u32 TIMER_T1HZ_MK;
 extern u32 TIMER_LED;
 extern u32 TIMER_CONTROL_SYS;
+extern u32 TIMER_TIMEOUT;//таймер таймаута ожидания ответов
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -211,9 +212,9 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-  if (SysTickDelay != 0) {SysTickDelay--;}  
-
-  if (TIMER_BP_PWM!=0) TIMER_BP_PWM--;
+  if (SysTickDelay != 0) {SysTickDelay--;} 
+  if (TIMER_BP_PWM != 0) TIMER_BP_PWM--;
+  if (TIMER_TIMEOUT!= 0) TIMER_TIMEOUT--;
   timer_DMA2++;
   timer_DMA1_Stream6++;
   TIMER1++;

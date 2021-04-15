@@ -110,13 +110,10 @@ volatile char          rx_buffer2[RX_BUFFER_SIZE2];
 volatile unsigned int rx_wr_index2,rx_rd_index2,rx_counter2;
 volatile u8  rx_buffer_overflow2;
 
-
-
 char sr[BUFFER_SR+1];
 unsigned char lsr;
 unsigned char lk;
 unsigned int led_tick;
-
 
 char  strng[buf_IO];
 char      InOut[BUFFER_SR+1];
@@ -220,6 +217,10 @@ u8 LM_ID_CN[8];
 u8 D_TEMP[4];
 int TMP_v=0;
 
+u8  FLAG_ADR_REQ=0;
+u8  ADR_SLAVE [8];  //тут храним адреса кассет из блока АЦ
+u8  NUMBER_OF_B072; //число блоков Б072 на бекплейне
+u32 TIMER_TIMEOUT=0;//таймер таймаута ожидания ответов
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -1831,21 +1832,18 @@ if (strcmp(Word,"i2c_transmit")==0)
 	 crc_comp =atoi(DATA_Word);	
  	 crc_input=atoi(DATA_Word2);
 	 z1=crc_input;
-     HAL_I2C_Master_Transmit(&hi2c1,crc_comp,&z1,1,10);
-	 
+     HAL_I2C_Master_Transmit(&hi2c1,crc_comp,&z1,1,10);	 
    } else
 if (strcmp(Word,"i2c_recive")==0)                     
    {
      Transf ("принял i2c_recive\r\n"    );
-	 crc_comp =atoi(DATA_Word);	
+	   crc_comp =atoi(DATA_Word);	
      HAL_I2C_Master_Receive(&hi2c1,crc_comp,&z1,1,10);
-	 x_out("data=",z1);
-	 
+	 x_out("data=",z1);	 
    } else
 if (strcmp(Word,"info")==0)                     
    {
-     Transf ("принял info\r\n"    );
- 
+     Transf ("принял info\r\n"    ); 
      info();
    } else
 if (strcmp(Word,"led")==0)                     
@@ -1853,14 +1851,25 @@ if (strcmp(Word,"led")==0)
 	 crc_comp =atoi(DATA_Word);
      u_out ("принял led:",crc_comp);
 	 TCA_WR(crc_comp);
-   }  
+   }else  
 if (strcmp(Word,"menu")==0)                     
    {
      Transf ("принял menu\r\n"    );
      Menu1(0);
-   }  
+   } else
+if (strcmp(Word,"REQ_COL")==0)    //запрос количества блоков 072 и их адресов                 
+   {
+     Transf ("принял REQ_COL\r\n"    );
+     req_col();
+   } else
+if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый вопрос                     
+   {     
+     crc_comp =atoi(DATA_Word); 
+     u_out ("принял ANS:",crc_comp);
+     answer_translated (crc_comp);     
+   }   
  } 
-	  for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
+	    for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)   DATA_Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)  DATA_Word2[i]     =0x0;  
       for (i=0u;i<BUFFER_SR;i++)  
@@ -3333,7 +3342,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	    //текущее системное время 
 			);	
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
-		}
+		} else
 		
 		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
 		{
@@ -3357,7 +3366,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 //			Transf("Запрос состояния!\r\n");	
 //			un_out("[",TIME_SYS);Transf("]\r\n");
-		}	
+		}	else
 		
 		if (id->CMD_TYPE[i]==CMD_LED)//команда управления светодиодами на лицевой панели
 		{
@@ -3383,7 +3392,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 			
 			Transf("Светодиоды!\r\n");			
-		}
+		} else
 		
 		if (id->CMD_TYPE[i]==CMD_12V)//команда включения источника +12V
 		{
@@ -3411,7 +3420,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 			Transf("Управление питанием +12V!\r\n");
 			u_out("START_BP:",START_BP);
-		}
+		} else
 		
 		if (id->CMD_TYPE[i]==CMD_CH_UP)//команда включения канала питания, исправить длинну данных команды!!!
 		{
@@ -3437,7 +3446,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			);	
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 			u_out("управляем питание каналов:",data);
-		}
+		} else
 
 		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда установки IP0 адреса определённой кассеты 072 
 		{
@@ -3468,7 +3477,27 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
 
-		}
+		} else
+
+    if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
+    {
+      Transf("Пришёл запрос на количество 072 в АЦ!\r\n");
+      req_col();
+    
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+
+      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+      id,             //указатель на реестр
+      &INVOICE[ADR],  //указатель на структуру квитанции
+      i,              //индекс команды в реестре
+      MSG_CMD_OK,     //сообщение квитанции
+      0,              //данные квитанции
+      TIME_SYS        //текущее системное время 
+      );  
+
+      SERV_ID_DEL (id,i);//удаляем команду из реестра
+
+    }
 		
 	//	if (id->TIME<TIME_SYS)
 	}
@@ -3677,6 +3706,48 @@ void REQ_VERSIYA (void)
   xn_out("Дата:",tmp0);Transf("  ");x_out("Время:",tmp1); 
 }
 
+//разбираем ответ от кассеты на бекплейне
+void answer_translated (u32 dat)
+{
+  u8 adr=0;
+  if (FLAG_ADR_REQ>0)//флаг запроса ставится не равным нулю!
+  {
+    adr=FLAG_ADR_REQ-1;
+    ADR_SLAVE[adr]=dat;
+    FLAG_ADR_REQ++;
+  }
+}
+
+//процедура сбора адресов с слейвов - блоков 072 на бекплейне обмена с таймаутом
+void SLAVE_COUNT (u32 time)
+{
+  int i=0;
+  int tmp0;
+
+  if (FLAG_ADR_REQ>0)
+  {    
+    if (time==0)
+     {
+        tmp0=FLAG_ADR_REQ-1;//сколько пришло ответов
+        u_out("Всего блоков:",tmp0);
+        Transf("-------------\r\n");
+        for (i=0;i<tmp0;i++)
+        {
+          u_out("Блок 072:",ADR_SLAVE[i]);
+        }
+        NUMBER_OF_B072=tmp0;//запоминаем количество блоков 072 в блоке АЦ
+        FLAG_ADR_REQ=0;
+     }
+  }   
+}
+
+void req_col ()
+{
+  TIMER_TIMEOUT=500;     //задаём таймаут 500 мс
+  FLAG_ADR_REQ=1;        //поднимаем флаг опроса адресатов на бекплейне
+  Transf2("~0 REQ_ADR;");//отсылаем запрос 
+}
+
 int main(void)
 {
 	int i=0;
@@ -3776,6 +3847,9 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
  
  Set_network();
  RECEIVE_udp(0, 3001,1);
+ 
+ 
+ for (i=0;i<8;i++) ADR_SLAVE[i]=0xff;//очищаем сассив с адресами слейвов (тут храним адреса для обмена по 485 шине)
 
 //-------------------------------------
 //           Для сдачи по ТУ
@@ -3809,17 +3883,18 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		FLAG_T1HZ_MK=1;
 		TIMER_T1HZ_MK=0;			
 	}; 
-	
+
+	SLAVE_COUNT       (TIMER_TIMEOUT);//тут подсчитываем число абонентов на 485 шине
 	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
   CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
 	CONTROL_POK 	    ();
 	LED_CONTROL 	    ();
 	CONTROL_T1HZ_MK   ();
-	CMD_search (&ID_SERV1,&SERV1);
+	CMD_search        (&ID_SERV1,&SERV1);
 	SEND_UDP_MSG 	    ();
   UART_DMA_TX  	    ();
 	UART_DMA_TX2  	  ();
-	UART_CNTR   (&huart2);//тут управляем драйвером 485
+	UART_CNTR         (&huart2);//тут управляем драйвером 485
 //	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	
   }
 
