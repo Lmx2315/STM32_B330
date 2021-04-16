@@ -70,7 +70,9 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x140420211039;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x160420211306;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u32 IP_my=0;
+u8 PORT_my=0;
 
 u32 TIMER_CONTROL_SYS;   		//переменная таймера контроля состояния системы блока питания
 
@@ -217,10 +219,27 @@ u8 LM_ID_CN[8];
 u8 D_TEMP[4];
 int TMP_v=0;
 
-u8  FLAG_ADR_REQ=0;
-u8  ADR_SLAVE [8];  //тут храним адреса кассет из блока АЦ
-u8  NUMBER_OF_B072; //число блоков Б072 на бекплейне
-u32 TIMER_TIMEOUT=0;//таймер таймаута ожидания ответов
+//----------Адреса кассет 072 на бекплейне--------------
+u32 MASTER_IP0     =0x01030260;
+u32 MASTER_IP1     =0x01030261;
+u32 MASTER_DEST_IP0=0x01030201;
+u32 MASTER_DEST_IP1=0x01030202;
+
+u32 SLAVE_IP0      =0x01030360;
+u32 SLAVE_IP1      =0x01030361;
+u32 SLAVE_DEST_IP0 =0x01030301;
+u32 SLAVE_DEST_IP1 =0x01030302;
+//------------------------------------------------------
+
+u8  FLAG_ADR_COLLECT=0;     //флаг запускающий сбор адресов с бекплейнов
+u8  FLAG_IP0_SETUP=0;       //флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
+u8  FLAG_IP1_SETUP=0;       //флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
+u8  FLAG_DEST_IP0_SETUP=0;  //флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
+u8  FLAG_DEST_IP1_SETUP=0;  //флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
+u8  FLAG_ADR_REQ=0;         //флаг запроса адреса от слейва на бэкплейне, поднимается когда запрашивается 
+u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
+u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
+u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -1163,6 +1182,40 @@ void u64_out (char s[],u64 a)
    Transf ("\r");
 }
 
+void un64_out (char s[],u64 a)
+{
+   u64 z=0; 
+   Transf (s);
+   z=a>>32;
+   a=a&0xffffffff;
+   sprintf (strng,"%u",z);
+   Transf(strng);
+   sprintf (strng,"%u",a);
+   Transf(strng);
+}
+
+//выводим десятичные числа побайтно для IP адреса
+void xun_out (char s[],u32 a)//было u64 
+{
+   u8 tmp0=0;
+   Transf (s);
+   tmp0=(a>>24)&0xff;
+   sprintf (strng,"%u",tmp0);
+   Transf(strng);   
+   Transf(".");
+   tmp0=(a>>16)&0xff;
+   sprintf (strng,"%u",tmp0);
+   Transf(strng);   
+   Transf(".");
+   tmp0=(a>> 8)&0xff;
+   sprintf (strng,"%u",tmp0);
+   Transf(strng);   
+   Transf(".");
+   tmp0=(a>> 0)&0xff;
+   sprintf (strng,"%u",tmp0);
+   Transf(strng);   
+}
+
 void ARRAY_DATA (u32 a)  //разбиваем 32 битную переменную на байты и суём в транспортный массив
 {
 	D_TEMP[0]=a>>24;
@@ -1672,7 +1725,7 @@ if (strcmp(Word,"time")==0) //
 	  crc_comp =atoi  (DATA_Word); 
 //    u_out ("принял time:",crc_comp); 
 //	  u_out("TIME_SYS:",TIME_SYS);
-	  u64_out("TIME_SYS:",TIME_SYS);
+    un64_out("[",TIME_SYS);Transf("]\r\n");
 //	  u_out("TIMER1  :",TIMER1);
 //	  u_out("TIME_TEST:",TIME_TEST);
 	  
@@ -1927,12 +1980,17 @@ void Menu1(char a)
   Transf("-------\r");
   Transf("Расшифровка структуры команды:\r");
   Transf("~ - стартовый байт\r");
-  Transf("0 - адрес абонента\r");
+  un_out("",Adress-0x30);
+  Transf(" - адрес абонента\r");
   Transf(";- конец пачки \r");
   Transf(".............. \r");
   Transf("---------------------------------------------\r\n");
-  Transf("IP  :1.3.1.60 - IP адрес    блока\r");
-  Transf("PORT:2054          - номер порта блока\r");
+  Transf("PORT:");
+  un_out("",PORT_my);
+  Transf("       - номер порта блока\r");
+  Transf("IP  :");
+  xun_out("",IP_my);
+  Transf(" - IP адрес    блока\r"); 
   Transf("~0 help; - текущее меню\r");
   Transf("~0 info; - информация \r");
   Transf("~0 rs485_test; - \r");
@@ -1954,6 +2012,7 @@ void Menu1(char a)
   //for (i=0; i<64; i++) zputs ("*",1);  // вывод приветствия
   //for (i=0;i<10;i++) puts("\r",1);  // очистка терминала
   Transf("\r");
+  REQ_VERSIYA(); //выводим версию прошивки
   //*******************************************************************************
 }
 
@@ -2136,6 +2195,7 @@ void BP_start (u16 a)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
+    FUNC_FLAG_UP (&FLAG_ADR_COLLECT,5000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -3512,7 +3572,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
-      Transf("Пришёл запрос на количество 072 в АЦ!\r\n");
+      Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
       req_col();
     
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
@@ -3746,6 +3806,42 @@ void SETUP_IP1_072 (u8 adr,u32 ip)
    Transf2(a);
 }
 
+void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
+{
+  u8 a[64];
+  for (int i=0;i<64;i++) a[i]=0;
+
+   strcpy(a,"~0 setup_DEST_IP0:"); 
+   a[1]= adr+0x30; 
+   sprintf (strng,"%d",ip);
+   strcat(a,strng);
+   strcat(a,";\r\n");
+
+
+   Transf ("Отправляем на бекплейн:");
+   Transf (a);
+   Transf ("\r\n");
+   Transf2(a);
+}
+
+void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
+{
+  u8 a[64];
+  for (int i=0;i<64;i++) a[i]=0;
+
+   strcpy(a,"~0 setup_DEST_IP1:"); 
+   a[1]= adr+0x30; 
+   sprintf (strng,"%d",ip);
+   strcat(a,strng);
+   strcat(a,";\r\n");
+
+
+   Transf ("Отправляем на бекплейн:");
+   Transf (a);
+   Transf ("\r\n");
+   Transf2(a);
+}
+
 void REQ_VERSIYA (void)
 {
   u32 tmp0,tmp1;
@@ -3769,33 +3865,110 @@ void answer_translated (u32 dat)
 }
 
 //процедура сбора адресов с слейвов - блоков 072 на бекплейне обмена с таймаутом
-void SLAVE_COUNT (u32 time)
+void SLAVE_COUNT ()
 {
   int i=0;
   int tmp0;
 
-  if (FLAG_ADR_REQ>0)
-  {    
-    if (time==0)
-     {
-        tmp0=FLAG_ADR_REQ-1;//сколько пришло ответов
-        u_out("Всего блоков:",tmp0);
-        Transf("-------------\r\n");
-        for (i=0;i<tmp0;i++)
-        {
-          u_out("Блок 072:",ADR_SLAVE[i]);
-        }
-        NUMBER_OF_B072=tmp0;//запоминаем количество блоков 072 в блоке АЦ
-        FLAG_ADR_REQ=0;
-     }
-  }   
+   tmp0=FLAG_ADR_REQ-1;//сколько пришло ответов
+   u_out("Всего блоков:",tmp0);
+   Transf("-------------\r\n");
+   for (i=0;i<tmp0;i++)
+    {
+      u_out("Блок 072:",ADR_SLAVE[i]);
+    }
+    NUMBER_OF_B072=tmp0;//запоминаем количество блоков 072 в блоке АЦ
 }
 
+//посылаем запрос на бекплейн про адреса блоков 072
 void req_col ()
 {
-  TIMER_TIMEOUT=500;     //задаём таймаут 500 мс
-  FLAG_ADR_REQ=1;        //поднимаем флаг опроса адресатов на бекплейне
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
+}
+
+
+//запускает отложенные задачи
+void DISPATCHER (u32 timer)
+{
+  if (timer==0)
+  {
+      if (FLAG_ADR_COLLECT!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по сбору адресов!\r\n");
+        req_col ();//запрашиваем адреса
+        FUNC_FLAG_UP (&FLAG_ADR_REQ,1000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
+        FLAG_ADR_COLLECT=0;
+        return;
+      } else
+
+      if (FLAG_ADR_REQ!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по выводу количества 072!\r\n");
+        SLAVE_COUNT ();
+        FUNC_FLAG_UP (&FLAG_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов
+        FLAG_ADR_REQ=0;
+        return;
+      } else
+
+      if (FLAG_IP0_SETUP!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по установке IP0!\r\n");
+        SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
+  //    SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP (&FLAG_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        FLAG_IP0_SETUP=0;
+        return;
+      } else  
+
+      if (FLAG_IP1_SETUP!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по установке IP1!\r\n");
+        SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+  //    SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP (&FLAG_DEST_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        FLAG_IP1_SETUP=0;
+        return;
+      } else
+
+      if (FLAG_DEST_IP0_SETUP!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по установке DEST_IP0!\r\n");
+        SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+ //     SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP (&FLAG_DEST_IP1_SETUP,100);          //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        FLAG_DEST_IP0_SETUP=0;
+        return;
+      } else
+
+      if (FLAG_DEST_IP1_SETUP!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по установке DEST_IP1!\r\n");
+        SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+  //    SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
+        FLAG_DEST_IP1_SETUP=0;
+        return;
+      } 
+
+
+  }
+
+
+}
+
+//эта процедура поднимает переданный ей флаг и устанавливает таймаут на заданое время
+void FUNC_FLAG_UP (u8 *p,u32 time)
+{
+  *p=1;
+  TIMER_TIMEOUT=time;
+  Transf("Поднимаем флаг отложенного задания!\r\n");
+  IO("~0 time;");
+  u_out("timeout:",time);
 }
 
 int main(void)
@@ -3907,7 +4080,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 //  TCA_WR(255);//зажигаем все светодиоды на лицевой панели
 //-------------------------------------
   RESET_072(1);//снимаем ресет 072 кассет
-  
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -3934,7 +4107,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		TIMER_T1HZ_MK=0;			
 	}; 
 
-	SLAVE_COUNT       (TIMER_TIMEOUT);//тут подсчитываем число абонентов на 485 шине
+  DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
 	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
   CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
 	CONTROL_POK 	    ();
@@ -3945,7 +4118,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
   UART_DMA_TX  	    ();
 	UART_DMA_TX2  	  ();
 	UART_CNTR         (&huart2);//тут управляем драйвером 485
-//	if (FLAG_DMA_ADC==1) {DMA_ADC();FLAG_DMA_ADC=0;}	
+
   }
 
 }

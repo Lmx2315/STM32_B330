@@ -415,13 +415,16 @@ uint32_t my_time;
  
 uint8 Enable_DHCP = OFF;
 
-#define         NB 3//!!!!!!!номер в цепи резервировния!!!!
+#define         NB 0//!!!!!!!номер в цепи резервировния!!!!
 u8 NUMBER_BLOK =NB; 
 
 uint8 MAC[6]     ={0x64, 0xA2, 0x32, 0x01, 0x03,NB};//MAC Address
-uint8 IP [4]     ={1, 3,  2,NB+60};//IP Address  
-uint8 GateWay[4] ={1, 3,  2, 253};// Gateway Address
+uint8 IP [4]     ={1, 3,  1,NB+60};//IP Address  
+uint8 GateWay[4] ={1, 3,  1,  253};// Gateway Address
 uint8 SubNet [4] ={255, 255, 0,  0};//SubnetMask Address
+
+extern u32 IP_my;
+extern u8 PORT_my;
 
 /* 
 uint8 Enable_DHCP = ON;
@@ -1768,6 +1771,7 @@ void RECEIVE_udp(SOCKET s, uint16 port,unsigned char event)
 	 int16 RSR_len;
     uint16 received_len;
 	uint32 lsr=0;
+	PORT_my=port;
    
  	IINCHIP_WRITE(Sn_IR(s), 0xff);  //сброс прерываний, если были	
 	
@@ -2413,7 +2417,9 @@ void Set_network(void)
         iinchip_init();
 	
         wait_10ms(100);
-        
+
+        IP_my=(IP[0]<<24)|(IP[1]<<16)|(IP[2]<<8)|(IP[3]<<0);//это для справок!!!
+          
         // MAC ADDRESS
         for (i = 0u ; i < 6u; i++) Config_Msg.Mac[i] = MAC[i];
         // Local IP ADDRESS
