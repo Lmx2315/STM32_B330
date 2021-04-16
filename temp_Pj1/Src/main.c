@@ -220,13 +220,13 @@ u8 D_TEMP[4];
 int TMP_v=0;
 
 //----------Адреса кассет 072 на бекплейне--------------
-u32 MASTER_IP0     =0x01030260;
-u32 MASTER_IP1     =0x01030261;
+u32 MASTER_IP0     =0x0103023c;
+u32 MASTER_IP1     =0x0103023d;
 u32 MASTER_DEST_IP0=0x01030201;
 u32 MASTER_DEST_IP1=0x01030202;
 
-u32 SLAVE_IP0      =0x01030360;
-u32 SLAVE_IP1      =0x01030361;
+u32 SLAVE_IP0      =0x0103033c;
+u32 SLAVE_IP1      =0x0103033d;
 u32 SLAVE_DEST_IP0 =0x01030301;
 u32 SLAVE_DEST_IP1 =0x01030302;
 //------------------------------------------------------
@@ -237,6 +237,7 @@ u8  FLAG_IP1_SETUP=0;       //флаг запускающий раздачу IP1 адресов кассетам 072 
 u8  FLAG_DEST_IP0_SETUP=0;  //флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
 u8  FLAG_DEST_IP1_SETUP=0;  //флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
 u8  FLAG_ADR_REQ=0;         //флаг запроса адреса от слейва на бэкплейне, поднимается когда запрашивается 
+u8  FLAG_ETHERNET_RERUN=0;  //флаг по которому отсылается команда для переконфигурирования маков ячеек 072
 u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
 u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
 u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
@@ -2195,7 +2196,7 @@ void BP_start (u16 a)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
-    FUNC_FLAG_UP (&FLAG_ADR_COLLECT,5000);//ставим отложенную задачу для опроса кассет на бекплейне
+    FUNC_FLAG_UP (&FLAG_ADR_COLLECT,7000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -3573,8 +3574,8 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
-      req_col();
-    
+  //    req_col();
+      FUNC_FLAG_UP (&FLAG_ADR_COLLECT,5000);//ставим отложенную задачу для опроса кассет на бекплейне
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
       ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
@@ -3811,7 +3812,7 @@ void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
   u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
 
-   strcpy(a,"~0 setup_DEST_IP0:"); 
+   strcpy(a,"~0 dest_IP0:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
@@ -3829,7 +3830,7 @@ void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
   u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
 
-   strcpy(a,"~0 setup_DEST_IP1:"); 
+   strcpy(a,"~0 dest_IP1:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
@@ -3886,6 +3887,11 @@ void req_col ()
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
 }
 
+//посылаем команду на переконфигурирование ETH MAC ячеек 072
+void CMD_MAC_RECONF ()
+{
+  Transf2("~0 eth_config;");//отсылаем запрос 
+}
 
 //запускает отложенные задачи
 void DISPATCHER (u32 timer)
@@ -3917,7 +3923,7 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
-  //    SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
+        SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP (&FLAG_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         FLAG_IP0_SETUP=0;
         return;
@@ -3928,8 +3934,8 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-  //    SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP (&FLAG_DEST_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP  (&FLAG_DEST_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         FLAG_IP1_SETUP=0;
         return;
       } else
@@ -3939,8 +3945,8 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке DEST_IP0!\r\n");
         SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
- //     SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP (&FLAG_DEST_IP1_SETUP,100);          //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP       (&FLAG_DEST_IP1_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
         FLAG_DEST_IP0_SETUP=0;
         return;
       } else
@@ -3950,11 +3956,20 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-  //    SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
+        SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP       (&FLAG_ETHERNET_RERUN,100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
         FLAG_DEST_IP1_SETUP=0;
         return;
-      } 
+      } else
 
+      if (FLAG_ETHERNET_RERUN!=0)
+      {
+        IO("~0 time;");
+        Transf("Выполняем отложенную задачу по перекофигурированию МАК ячеек 072!\r\n");
+        CMD_MAC_RECONF ();
+        FLAG_ETHERNET_RERUN=0;
+        return;
+      }
 
   }
 
