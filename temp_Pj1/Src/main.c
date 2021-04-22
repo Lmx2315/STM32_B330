@@ -70,7 +70,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x160420211306;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x220420211811;//номер версии прошивки 10-52 время и 02-04-2021 дата
 u32 IP_my=0;
 u8 PORT_my=0;
 

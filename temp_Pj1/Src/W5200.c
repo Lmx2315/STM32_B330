@@ -419,8 +419,8 @@ uint8 Enable_DHCP = OFF;
 u8 NUMBER_BLOK =NB; 
 
 uint8 MAC[6]     ={0x64, 0xA2, 0x32, 0x01, 0x03,NB};//MAC Address
-uint8 IP [4]     ={1, 3,  1,NB+60};//IP Address  
-uint8 GateWay[4] ={1, 3,  1,  253};// Gateway Address
+uint8 IP [4]     ={1, 3,  3,NB+60};//IP Address  
+uint8 GateWay[4] ={1, 3,  3,  253};// Gateway Address
 uint8 SubNet [4] ={255, 255, 0,  0};//SubnetMask Address
 
 extern u32 IP_my;
