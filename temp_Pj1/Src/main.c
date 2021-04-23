@@ -70,7 +70,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x220420211811;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x230420211714;//номер версии прошивки 10-52 время и 02-04-2021 дата
 u32 IP_my=0;
 u8 PORT_my=0;
 
@@ -225,12 +225,16 @@ u32 MASTER_IP1     =0x0103023d;
 u32 MASTER_DEST_IP0=0x01030201;
 u32 MASTER_DEST_IP1=0x01030202;
 
-u32 SLAVE_IP0      =0x0103033c;
-u32 SLAVE_IP1      =0x0103033d;
-u32 SLAVE_DEST_IP0 =0x01030301;
-u32 SLAVE_DEST_IP1 =0x01030302;
+u32 SLAVE_IP0      =0x0103013c;
+u32 SLAVE_IP1      =0x0103013d;
+u32 SLAVE_DEST_IP0 =0x01030101;
+u32 SLAVE_DEST_IP1 =0x01030102;
 //------------------------------------------------------
-
+u8  FLAG_ASQ_TEST_485=0;    //флаг ответа на запрос теста по 485 шине
+u8  FLAG_TEST_485_REQ=0;    //флаг запускающий ожидание ответа на запрос по шине 485
+u8  FLAG_TEST_485=0;        //флаг запускающий тест проверки шины 485
+u8  FLAG_TEST_SPI=0;        //флаг запускающий тест проверки шины SPI
+u8  FLAG_TEST_JTAG=0;       //флаг запускающий тест проверки шины JTAG
 u8  FLAG_ADR_COLLECT=0;     //флаг запускающий сбор адресов с бекплейнов
 u8  FLAG_IP0_SETUP=0;       //флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
 u8  FLAG_IP1_SETUP=0;       //флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
@@ -650,7 +654,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;//115200
+  huart1.Init.BaudRate = 256000;//115200
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1479,6 +1483,26 @@ void info ()
 
 }
 
+void BUS_485_TEST (u8 a)
+{
+   u8 Str[10];
+
+   Str[ 0]='~';
+   Str[ 1]=0x30+(a&0xff);
+   Str[ 2]='r';
+   Str[ 3]='s';
+   Str[ 4]='4';
+   Str[ 5]='8';
+   Str[ 6]='5';
+   Str[ 7]='_';
+   Str[ 8]='t';
+   Str[ 9]='e';
+   Str[10]='s';
+   Str[11]='t';
+   Str[12]=0x00;
+   
+   Transf2(Str);
+}
 
 u32 crc_input=0u; 
 u32 crc_comp=0u;
@@ -1636,11 +1660,12 @@ if (strcmp(Word,"rs485_test_OK")==0) // проверяем шину 485! Должен прийти ответ.
    {
 	 u_out("принял rs485_test_OK:",crc_comp);
 	 Transf("тест 485 шины пройден успешно!\r\n");
+	 FLAG_ASQ_TEST_485=1;
    } else	
 if (strcmp(Word,"rs485_test")==0) // проверяем шину 485! Должен прийти ответ.
    {
-	 u_out("принял rs485_test:",crc_comp);
-	 Transf2("~0 rs485_test;");
+	 u_out("принял rs485_test:",crc_comp);	 
+     BUS_485_TEST (crc_comp);
    } else
  if (strcmp(Word,"rs485_help")==0) // ~0 spi_write:adr.code;
    {
@@ -2825,6 +2850,41 @@ u32 k //смещение данных в байтах от их начального положения
  return idx;
 }
 
+
+//функция отслыает ...
+void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
+{
+  u32 i=0;
+  u32 idx0=0;
+  u32 idx1=0;
+  u32 idx2=0;
+  u32 idx3=0;
+  u32 idx4=0;
+  u32 idx5=0;
+  u32 idx6=0;
+  u32 idx7=0;
+  
+  u64 ADR=ADRES_SENDER_CMD;
+  u32 data=0;
+  u8 D[4];
+        
+ if (msg_type==MSG_REQ_TEST_485)
+ {
+    ARRAY_DATA(FLAG_ASQ_TEST_485);
+ }
+
+        
+  SYS_CMD_MSG(
+        id,//реестр
+        &INVOICE[ADR],  //структура квитанций 
+        i,        //индекс в реестре
+        msg_type, //тип сообщения
+        4,        //объём данных сообщения в байтах
+        D_TEMP,   //данные сообщения - массив данных
+        TIME_SYS  //время составления квитанции
+        );
+}
+
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 {
 	u32 i=0;
@@ -3570,7 +3630,6 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       SERV_ID_DEL (id,i);//удаляем команду из реестра
 
     } else
-
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
@@ -3588,7 +3647,24 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       );  
 
       SERV_ID_DEL (id,i);//удаляем команду из реестра
+    } else
+       if (id->CMD_TYPE[i]==CMD_TEST_485)//команда начала теста проверки шины 485
+    {
+      Transf("начинаем тест проверку шины 485!\r\n");
+      FLAG_ASQ_TEST_485=0;//сбрасываем флаг ответа на тест 485
+      FUNC_FLAG_UP (&FLAG_TEST_485,0);//ставим отложенную задачу для опроса кассет на бекплейне
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
+      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+      id,             //указатель на реестр
+      &INVOICE[ADR],  //указатель на структуру квитанции
+      i,              //индекс команды в реестре
+      MSG_CMD_OK,     //сообщение квитанции
+      0,              //данные квитанции
+      TIME_SYS        //текущее системное время 
+      );  
+
+      SERV_ID_DEL (id,i);//удаляем команду из реестра
     }
 		
 	//	if (id->TIME<TIME_SYS)
@@ -3968,6 +4044,27 @@ void DISPATCHER (u32 timer)
         Transf("Выполняем отложенную задачу по перекофигурированию МАК ячеек 072!\r\n");
         CMD_MAC_RECONF ();
         FLAG_ETHERNET_RERUN=0;
+        return;
+      } else
+
+       if (FLAG_TEST_485!=0)
+      {
+		FLAG_TEST_485=0;
+		FUNC_FLAG_UP (&FLAG_TEST_485_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
+        IO("~0 time;");
+        Transf("Посылаем код по шине 485!\r\n");
+        BUS_485_TEST (ADR_SLAVE[1]+0x30);
+        return;
+      } else
+		
+	    if (FLAG_TEST_485_REQ!=0)
+      {
+		FLAG_TEST_485_REQ=0;
+        IO("~0 time;");
+        Transf("Проверяем результат теста шины 485!\r\n");
+        if (FLAG_ASQ_TEST_485==1) Transf("Тест пройден!\r\n");
+		    else                      Transf("Тест не пройден!\r\n");
+        MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_485);//готовим квитанцию серверу по результатам теста
         return;
       }
 
