@@ -66,7 +66,7 @@ extern u32 TIMER_LED;
 extern u32 TIMER_CONTROL_SYS;
 extern u32 TIMER_TIMEOUT;//таймер таймаута ожидания ответов
 /* USER CODE END PV */
-
+extern POINTER  PNT[PNT_BUF];  //массив указателей на отложенные задачи
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
 
@@ -212,6 +212,16 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
+  int i=0;
+  for (i=0;i<PNT_BUF;i++)
+  {
+    if (PNT[i].timer>0) 
+      {
+        PNT[i].timer--;
+        if (PNT[i].timer==0) PNT[i].FLAG=1;
+      }
+  }
+
   if (SysTickDelay != 0) {SysTickDelay--;} 
   if (TIMER_BP_PWM != 0) TIMER_BP_PWM--;
   if (TIMER_TIMEOUT!= 0) TIMER_TIMEOUT--;

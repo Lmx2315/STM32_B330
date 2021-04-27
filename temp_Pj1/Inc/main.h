@@ -513,7 +513,14 @@ typedef struct
   u32 IDX;        //подсчитанное количество отправителей
   u64 A[quantity_SENDER]; //масств адресов ОТПРАВ�
 }ADR_SENDER;
+//---------------------------
+typedef struct  //эта структура описывает указатель для отложенных команд
+{ 
+  u8  FLAG;
+  u32 timer;
+} POINTER;
 
+#define PNT_BUF 11
 //---------------------------
 
 u32 IO ( char* );
@@ -574,7 +581,7 @@ void SETUP_IP1_072 (u8 ,u32);
 void REQ_VERSIYA (void);
 void answer_translated (u32 );
 void req_col ();
-void FUNC_FLAG_UP (u8 *,u32);
+void FUNC_FLAG_UP (POINTER *,u32);
 
 //-------------JTAG--------------
 void JTAG_SCAN (void);
