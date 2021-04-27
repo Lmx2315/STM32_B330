@@ -1485,23 +1485,28 @@ void info ()
 
 void BUS_485_TEST (u8 a)
 {
-   u8 Str[10];
+   u8 Str[15];
 
    Str[ 0]='~';
-   Str[ 1]=0x30+(a&0xff);
-   Str[ 2]='r';
-   Str[ 3]='s';
-   Str[ 4]='4';
-   Str[ 5]='8';
-   Str[ 6]='5';
-   Str[ 7]='_';
-   Str[ 8]='t';
-   Str[ 9]='e';
-   Str[10]='s';
-   Str[11]='t';
-   Str[12]=0x00;
-   
+   Str[ 1]=0x30+a;
+   Str[ 2]=' ';
+   Str[ 3]='r';
+   Str[ 4]='s';
+   Str[ 5]='4';
+   Str[ 6]='8';
+   Str[ 7]='5';
+   Str[ 8]='_';
+   Str[ 9]='t';
+   Str[10]='e';
+   Str[11]='s';
+   Str[12]='t';
+   Str[13]=';';
+   Str[14]=0x00;
+
    Transf2(Str);
+   Transf("Послан код: ");
+   Transf(Str);
+   Transf("\r\n");
 }
 
 u32 crc_input=0u; 
@@ -1948,7 +1953,7 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
      answer_translated (crc_comp);     
    }   
  } 
-	    for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
+	  for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)   DATA_Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)  DATA_Word2[i]     =0x0;  
       for (i=0u;i<BUFFER_SR;i++)  
@@ -2221,7 +2226,7 @@ void BP_start (u16 a)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
-    FUNC_FLAG_UP (&FLAG_ADR_COLLECT,7000);//ставим отложенную задачу для опроса кассет на бекплейне
+        FUNC_FLAG_UP (&FLAG_ADR_COLLECT,7000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -3634,7 +3639,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     {
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
   //    req_col();
-      FUNC_FLAG_UP (&FLAG_ADR_COLLECT,5000);//ставим отложенную задачу для опроса кассет на бекплейне
+      FUNC_FLAG_UP (&FLAG_ADR_COLLECT,1000);//ставим отложенную задачу для опроса кассет на бекплейне
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
       ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
@@ -3935,9 +3940,8 @@ void answer_translated (u32 dat)
   u8 adr=0;
   if (FLAG_ADR_REQ>0)//флаг запроса ставится не равным нулю!
   {
-    adr=FLAG_ADR_REQ-1;
+    adr=NUMBER_OF_B072++;
     ADR_SLAVE[adr]=dat;
-    FLAG_ADR_REQ++;
   }
 }
 
@@ -3947,20 +3951,20 @@ void SLAVE_COUNT ()
   int i=0;
   int tmp0;
 
-   tmp0=FLAG_ADR_REQ-1;//сколько пришло ответов
+   tmp0=NUMBER_OF_B072;//сколько пришло ответов
    u_out("Всего блоков:",tmp0);
    Transf("-------------\r\n");
    for (i=0;i<tmp0;i++)
     {
       u_out("Блок 072:",ADR_SLAVE[i]);
     }
-    NUMBER_OF_B072=tmp0;//запоминаем количество блоков 072 в блоке АЦ
 }
 
 //посылаем запрос на бекплейн про адреса блоков 072
 void req_col ()
 {
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
+  NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
 }
 
 //посылаем команду на переконфигурирование ETH MAC ячеек 072
@@ -3989,7 +3993,7 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по выводу количества 072!\r\n");
         SLAVE_COUNT ();
-        FUNC_FLAG_UP (&FLAG_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов
+        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&FLAG_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
         FLAG_ADR_REQ=0;
         return;
       } else
@@ -4053,7 +4057,8 @@ void DISPATCHER (u32 timer)
 		FUNC_FLAG_UP (&FLAG_TEST_485_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Посылаем код по шине 485!\r\n");
-        BUS_485_TEST (ADR_SLAVE[1]+0x30);
+        u8 tmp0=ADR_SLAVE[1];//порядковый номер блока хранится в алфавитном виде!
+        BUS_485_TEST (tmp0);
         return;
       } else
 		
@@ -4063,7 +4068,7 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Проверяем результат теста шины 485!\r\n");
         if (FLAG_ASQ_TEST_485==1) Transf("Тест пройден!\r\n");
-		    else                      Transf("Тест не пройден!\r\n");
+		    else                  Transf("Тест не пройден!\r\n");
         MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_485);//готовим квитанцию серверу по результатам теста
         return;
       }
@@ -4219,15 +4224,15 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		TIMER_T1HZ_MK=0;			
 	}; 
 
-  DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
+    DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
 	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
-  CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
-	CONTROL_POK 	    ();
-	LED_CONTROL 	    ();
+    CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
+	CONTROL_POK 	  ();
+	LED_CONTROL 	  ();
 	CONTROL_T1HZ_MK   ();
 	CMD_search        (&ID_SERV1,&SERV1);
-	SEND_UDP_MSG 	    ();
-  UART_DMA_TX  	    ();
+	SEND_UDP_MSG 	  ();
+    UART_DMA_TX  	  ();
 	UART_DMA_TX2  	  ();
 	UART_CNTR         (&huart2);//тут управляем драйвером 485
 
