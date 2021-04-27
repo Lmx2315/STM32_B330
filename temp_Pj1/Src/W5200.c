@@ -2075,7 +2075,7 @@ u64 e			 //CMD_ID
 					if((s->INDEX[j]>srv->x1)&&(s->INDEX[j]<srv->x2)) //нашли индекс команды в реестре, которая была затёрта в кольцевом буфере 
 					{
 					//	Transf("v1\r\n");
-						ERROR_ID = ERROR_CMD_BUF;				//команда не выполненна потому что была затёрта в буфере
+						ERROR_ID = MSG_ERROR_CMD_BUF;				//команда не выполненна потому что была затёрта в буфере
 						Transf("квитанция о затёртых пакетах!\r\n");
 						ERROR_CMD_MSG(s,m,j,ERROR_ID,0,0);	//заполняем квитанцию о событии
 						s->INDEX	[j] =0xffffffff;	
@@ -2093,7 +2093,7 @@ u64 e			 //CMD_ID
 					//	u_out("    srv->x1:",srv->x1);
 					//	u_out("    srv->x2:",srv->x2);
 						
-						ERROR_ID = ERROR_CMD_BUF;				//команда не выполненна потому что была затёрта в буфере
+						ERROR_ID = MSG_ERROR_CMD_BUF;				//команда не выполненна потому что была затёрта в буфере
 						Transf("квитанция о затёртых пакетах!\r\n");
 						u_out("s->CMD_TYPE	[j]:",s->CMD_TYPE	[j]);
 						ERROR_CMD_MSG(s,m,j,ERROR_ID,0,0);	//заполняем квитанцию о событии

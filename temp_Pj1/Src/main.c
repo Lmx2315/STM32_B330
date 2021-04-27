@@ -70,7 +70,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x230420211714;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x270420211729;//номер версии прошивки 10-52 время и 02-04-2021 дата
 u32 IP_my=0;
 u8 PORT_my=0;
 
@@ -219,7 +219,10 @@ u8 LM_ID_CN[8];
 u8 D_TEMP[4];
 int TMP_v=0;
 
-SYS_STATE_BOARD B330; //структура содержащая состояние блока Б330
+u8 FLAG_TIME_OF_WORK_WRITE=0; //флаг отложеной записи во флеш для нарабоки блока
+u32 TIME_OF_SECOND=0;         //cчётчик секунд с начала работы
+u32 TIME_OF_WORK=0;           //время наработки блока в десятках минут
+SYS_STATE_BOARD B330;         //структура содержащая состояние блока Б330
 //----------Адреса кассет 072 на бекплейне--------------
 u32 MASTER_IP0     =0x0103023c;
 u32 MASTER_IP1     =0x0103023d;
@@ -1956,7 +1959,11 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
      crc_comp =atoi(DATA_Word); 
      u_out ("принял ANS:",crc_comp);
      answer_translated (crc_comp);     
-   }   
+   } else  
+ if (strcmp(Word,"Show_worktime")==0) //
+   {
+    u_out ("принял Show_worktime:",TIME_OF_WORK); 
+   }
  } 
 	  for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)   DATA_Word[i]     =0x0;
@@ -2219,6 +2226,7 @@ void BP_start (u16 a)
 	static u8 flag=0;
 	if (a==0)
 	{
+	    B330.INIT=0;
 		PWR_072    (255);//выключаем каналы питания и сбрасываем состояния переменных говорящих о каналах питания - в ноль
 		UPR_HDS_MK (1);	
 		TIMER_BP_PWM=1000;
@@ -2226,6 +2234,7 @@ void BP_start (u16 a)
 	} else
 	if ((TIMER_BP_PWM==0)&&(flag==1))
 	{
+		B330.INIT=1;
 		flag=0;
 		UPR_HDS_MK (0);			
 		Transf("Включаем ПИТАНИЕ!\r\n");
@@ -2895,6 +2904,59 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
         );
 }
 
+
+#define COL 37
+u8 DATA_TR [COL];
+
+void ARR_Z ()
+{u8 n=0;
+  
+  DATA_TR[n++]=B330.INIT;			//0
+  DATA_TR[n++]=B330.TEMP_MAX>>8;	//1	
+  DATA_TR[n++]=B330.TEMP_MAX&0xff;  //2	 
+
+  DATA_TR[n++]=B330.I>>24;			//3
+  DATA_TR[n++]=B330.I>>16;			//4
+  DATA_TR[n++]=B330.I>> 8;			//5
+  DATA_TR[n++]=B330.I&0xff;			//6
+
+  DATA_TR[n++]=B330.U_min>>24;		//7	
+  DATA_TR[n++]=B330.U_min>>16;		//8
+  DATA_TR[n++]=B330.U_min>> 8;		//9
+  DATA_TR[n++]=B330.U_min&0xff;		//10
+
+  DATA_TR[n++]=B330.U_max>>24;		//11  
+  DATA_TR[n++]=B330.U_max>>16;		//12 
+  DATA_TR[n++]=B330.U_max>> 8;		//13
+  DATA_TR[n++]=B330.U_max&0xff;		//14
+
+  DATA_TR[n++]=B330.P>>24;			//15
+  DATA_TR[n++]=B330.P>>16;			//16 
+  DATA_TR[n++]=B330.P>> 8;			//17
+  DATA_TR[n++]=B330.P&0xff; 		//18
+
+  DATA_TR[n++]=B330.FLAG_1HZ;		//19
+
+  DATA_TR[n++]=B330.B330_NUMBER>>24;//20
+  DATA_TR[n++]=B330.B330_NUMBER>>16;//21
+  DATA_TR[n++]=B330.B330_NUMBER>> 8;//22
+  DATA_TR[n++]=B330.B330_NUMBER;	//23
+  DATA_TR[n++]=B330.PRG_VERSIYA>>56;//24
+  DATA_TR[n++]=B330.PRG_VERSIYA>>48;//25
+  DATA_TR[n++]=B330.PRG_VERSIYA>>40;//26
+  DATA_TR[n++]=B330.PRG_VERSIYA>>32;//27
+  DATA_TR[n++]=B330.PRG_VERSIYA>>24;//28
+  DATA_TR[n++]=B330.PRG_VERSIYA>>16;//29
+  DATA_TR[n++]=B330.PRG_VERSIYA>> 8;//30
+  DATA_TR[n++]=B330.PRG_VERSIYA>> 0;//31
+  DATA_TR[n++]=B330.WORK_TIME>>24;	//32
+  DATA_TR[n++]=B330.WORK_TIME>>16;	//33
+  DATA_TR[n++]=B330.WORK_TIME>> 8;	//34
+  DATA_TR[n++]=B330.WORK_TIME>> 0;  //35
+  DATA_TR[n++]=B330.STATUS_OK; 		//36
+
+}
+
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 {
 	u32 i=0;
@@ -3420,6 +3482,20 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 			D_TEMP,    		//данные сообщения - массив данных
 			TIME_SYS	  	//время составления квитанции
 			);
+//----------------------------------
+//квитанция об общем состоянии кассеты Б330
+	ARR_Z ();//заполняем транспортный массив
+
+			SYS_CMD_MSG(
+			id,//реестр
+			&INVOICE[ADR], 	//структура квитанций	
+			i,	 			//индекс в реестре
+			MSG_STATUS_OK,  //тип сообщения
+			COL,		    //объём данных сообщения в байтах
+			DATA_TR,  		//данные сообщения - массив данных
+			TIME_SYS	  	//время составления квитанции
+			);
+
 }
 
 
@@ -3699,6 +3775,7 @@ void CONTROL_T1HZ_MK (void)
 		FLAG_T1HZ_MK=0;
 		Transf("ПРОПАЛ СИГНАЛ T1HZ_MK!!!\r\n");
 	}
+	B330.FLAG_1HZ=FLAG_T1HZ_MK;
 }
   
 void LED_CONTROL (void)
@@ -3741,6 +3818,7 @@ void CONTROL_POK (void)
 void CONTROL_SYS (void)
 {
 	static u8 flag=0;
+	u32 tmp0=0; 
 	
   if ((START_BP==1)&&(TIMER_CONTROL_SYS>SYS_INTERVAL))
   {
@@ -3764,6 +3842,17 @@ void CONTROL_SYS (void)
     LM6.TEMP=LM_TEMP(6);
     LM7.TEMP=LM_TEMP(7);
     LM8.TEMP=LM_TEMP(8);
+
+    if (LM1.TEMP>tmp0) tmp0=LM1.TEMP;
+    if (LM2.TEMP>tmp0) tmp0=LM2.TEMP;
+    if (LM3.TEMP>tmp0) tmp0=LM3.TEMP;
+    if (LM4.TEMP>tmp0) tmp0=LM4.TEMP;
+    if (LM5.TEMP>tmp0) tmp0=LM5.TEMP;
+    if (LM6.TEMP>tmp0) tmp0=LM6.TEMP;
+    if (LM7.TEMP>tmp0) tmp0=LM7.TEMP;
+    if (LM8.TEMP>tmp0) tmp0=LM8.TEMP;
+
+    B330.TEMP_MAX=tmp0;tmp0=0;//4-ре значащих разряда
     //Измерение потребляемой мощности
     LM1.P=LM_in_p(1);
     LM2.P=LM_in_p(2);
@@ -3773,6 +3862,9 @@ void CONTROL_SYS (void)
     LM6.P=LM_in_p(6);
     LM7.P=LM_in_p(7);
     LM8.P=LM_in_p(8);
+
+    B330.P = LM1.P+LM2.P+LM3.P+LM4.P+LM5.P+LM6.P+LM7.P+LM8.P;//4-ре значащих разряда
+  //B330.P = 1000;
     //Измерение потребляемого тока
     LM1.I=LM_in_i(1);
     LM2.I=LM_in_i(2);
@@ -3782,6 +3874,18 @@ void CONTROL_SYS (void)
     LM6.I=LM_in_i(6);
     LM7.I=LM_in_i(7);
     LM8.I=LM_in_i(8);
+
+    if (LM1.I>tmp0) tmp0=LM1.I;
+    if (LM2.I>tmp0) tmp0=LM2.I;
+    if (LM3.I>tmp0) tmp0=LM3.I;
+    if (LM4.I>tmp0) tmp0=LM4.I;
+    if (LM5.I>tmp0) tmp0=LM5.I;
+    if (LM6.I>tmp0) tmp0=LM6.I;
+    if (LM7.I>tmp0) tmp0=LM7.I;
+    if (LM8.I>tmp0) tmp0=LM8.I;
+
+    B330.I = tmp0;tmp0=0;//3-три значащих разряда
+//    B330.I = 1000;
     //Измерение напряжения в каналах
     LM1.U=LM_v(1);
     LM2.U=LM_v(2);
@@ -3791,6 +3895,31 @@ void CONTROL_SYS (void)
     LM6.U=LM_v(6);
     LM7.U=LM_v(7);
     LM8.U=LM_v(8);
+
+    if (LM1.U>tmp0) tmp0=LM1.U;
+    if (LM2.U>tmp0) tmp0=LM2.U;
+    if (LM3.U>tmp0) tmp0=LM3.U;
+    if (LM4.U>tmp0) tmp0=LM4.U;
+    if (LM5.U>tmp0) tmp0=LM5.U;
+    if (LM6.U>tmp0) tmp0=LM6.U;
+    if (LM7.U>tmp0) tmp0=LM7.U;
+    if (LM8.U>tmp0) tmp0=LM8.U;  
+
+    B330.U_max=tmp0;tmp0=100000;//4-ре значащих разряда
+  //B330.U_max=1000;
+
+    if (LM1.U<tmp0) tmp0=LM1.U;
+    if (LM2.U<tmp0) tmp0=LM2.U;
+    if (LM3.U<tmp0) tmp0=LM3.U;
+    if (LM4.U>tmp0) tmp0=LM4.U;
+    if (LM5.U<tmp0) tmp0=LM5.U;
+    if (LM6.U<tmp0) tmp0=LM6.U;
+    if (LM7.U<tmp0) tmp0=LM7.U;
+    if (LM8.U<tmp0) tmp0=LM8.U;   
+
+    B330.U_min=tmp0;tmp0=0; //4-ре значащих разряда
+ //   B330.U_min=1000;   
+
   } else
 	  if ((START_BP==0)&&(flag==1))
   {
@@ -3831,6 +3960,16 @@ void CONTROL_SYS (void)
     LM7.P=0;
     LM8.P=0;
   }
+  
+  u8 err=0;
+  if (B330.TEMP_MAX>5000) err++;
+  if (B330.I>300)         err++;
+  if (B330.U_min<1100)    err++;
+  if (B330.U_max>1250)    err++;
+  if (B330.P    >30000)   err++;
+  if (B330.FLAG_1HZ==0)   err++;
+
+  if (err!=0) B330.STATUS_OK=0; else B330.STATUS_OK=1;
 }
 
 void ALARM_SYS_TEMP (void)  
@@ -4088,6 +4227,16 @@ void FUNC_FLAG_UP (POINTER *p,u32 time)
   u_out("timeout:",time);
 }
 
+void FTIME_OF_WORK ()
+{
+	if (TIME_OF_SECOND>600) 
+	{
+		TIME_OF_SECOND=0;
+		TIME_OF_WORK++;
+		FLAG_TIME_OF_WORK_WRITE=1;
+	}
+}
+
 int main(void)
 {
 	int i=0;
@@ -4198,6 +4347,9 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 //-------------------------------------
   RESET_072(1);//снимаем ресет 072 кассет
 
+  B330.PRG_VERSIYA=STM32_VERSION;
+  B330.WORK_TIME=TIME_OF_WORK; //время наработки блока в десятках минут;
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -4221,7 +4373,8 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		if (FLAG_ADRES_SENDER_CMD==1) SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);//отсылаем квитанцию о нашем состоянии
 		EVENT_INT3=0;
 		FLAG_T1HZ_MK=1;
-		TIMER_T1HZ_MK=0;			
+		TIMER_T1HZ_MK=0;
+		TIME_OF_SECOND++;//подсчитываем число секунд с момента включения			
 	}; 
 
     DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
@@ -4235,6 +4388,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
     UART_DMA_TX  	  ();
 	UART_DMA_TX2  	  ();
 	UART_CNTR         (&huart2);//тут управляем драйвером 485
+	FTIME_OF_WORK     ();     //тут следим за временем наработки
 
   }
 
