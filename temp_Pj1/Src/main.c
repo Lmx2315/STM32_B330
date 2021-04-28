@@ -247,10 +247,14 @@ POINTER  POINTER_TEST_SPI;      // 2  флаг запускающий тест проверки шины SPI
 POINTER  POINTER_TEST_JTAG_REQ;  // 3  флаг запускающий ожидание ответа на запрос по шине JTAG 
 POINTER  POINTER_TEST_JTAG;     // 3  флаг запускающий тест проверки шины JTAG
 POINTER  POINTER_ADR_COLLECT;   // 4  флаг запускающий сбор адресов с бекплейнов
-POINTER  POINTER_IP0_SETUP;     // 5  флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
-POINTER  POINTER_IP1_SETUP;     // 6  флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
-POINTER  POINTER_DEST_IP0_SETUP;// 7  флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
-POINTER  POINTER_DEST_IP1_SETUP;// 8  флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
+POINTER  POINTER_MASTER_IP0_SETUP;     // 5  флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
+POINTER  POINTER_SLAVE_IP0_SETUP;
+POINTER  POINTER_MASTER_IP1_SETUP;     // 6  флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
+POINTER  POINTER_SLAVE_IP1_SETUP;
+POINTER  POINTER_DEST_MASTER_IP0_SETUP;// 7  флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
+POINTER  POINTER_DEST_SLAVE_IP0_SETUP;
+POINTER  POINTER_DEST_MASTER_IP1_SETUP;// 8  флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
+POINTER  POINTER_DEST_SLAVE_IP1_SETUP;
 POINTER  POINTER_ADR_REQ;       // 9  флаг запроса адреса от слейва на бэкплейне, поднимается когда запрашивается 
 POINTER  POINTER_ETHERNET_RERUN;// 10 флаг по которому отсылается команда для переконфигурирования маков ячеек 072
 
@@ -4198,7 +4202,7 @@ void DISPATCHER (u32 timer)
       if (FLAG_DWN(&POINTER_ADR_COLLECT))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по сбору адресов!\r\n");
+        Transf("Идёт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
         FUNC_FLAG_UP (&POINTER_ADR_REQ,2000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
         return;
@@ -4206,43 +4210,70 @@ void DISPATCHER (u32 timer)
       if (FLAG_DWN(&POINTER_ADR_REQ))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по выводу количества 072!\r\n");
         SLAVE_COUNT ();
-        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
+        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
         return;
       } else
-      if (FLAG_DWN(&POINTER_IP0_SETUP))
+      if (FLAG_DWN(&POINTER_MASTER_IP0_SETUP))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по установке IP0!\r\n");
+        Transf("Устанавливаем мастер IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        return;
+      } else
+       if (FLAG_DWN(&POINTER_SLAVE_IP0_SETUP))
+      {
+        IO("~0 time;");
+        Transf("Устанавливаем слейв IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP (&POINTER_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        FUNC_FLAG_UP (&POINTER_MASTER_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
-      if (FLAG_DWN(&POINTER_IP1_SETUP))
+      if (FLAG_DWN(&POINTER_MASTER_IP1_SETUP))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по установке IP1!\r\n");
+        Transf("Устанавливаем мастер IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP  (&POINTER_SLAVE_IP1_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        return;
+      } else
+        if (FLAG_DWN(&POINTER_SLAVE_IP1_SETUP))
+      {
+        IO("~0 time;");
+        Transf("Устанавливаем слейв IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP  (&POINTER_DEST_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        FUNC_FLAG_UP  (&POINTER_DEST_MASTER_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
-      if (FLAG_DWN(&POINTER_DEST_IP0_SETUP))
+      if (FLAG_DWN(&POINTER_DEST_MASTER_IP0_SETUP))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по установке DEST_IP0!\r\n");
+        Transf("Устанавливаем мастер DEST_IP0!\r\n");
         SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-        SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP       (&POINTER_DEST_IP1_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP0_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
         return;
       } else
-      if (FLAG_DWN(&POINTER_DEST_IP1_SETUP))
+      if (FLAG_DWN(&POINTER_DEST_SLAVE_IP0_SETUP))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по установке DEST_IP1!\r\n");
+        Transf("Устанавливаем слейв DEST_IP0!\r\n");
+        SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP       (&POINTER_DEST_MASTER_IP1_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        return;
+      } else
+      if (FLAG_DWN(&POINTER_DEST_MASTER_IP1_SETUP))
+      {
+        IO("~0 time;");
+        Transf("Устанавливаем мастер DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP1_SETUP,100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
+        return;
+      } else
+      if (FLAG_DWN(&POINTER_DEST_SLAVE_IP1_SETUP))
+      {
+        IO("~0 time;");
+        Transf("Устанавливаем слейв DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
         return;
@@ -4250,13 +4281,13 @@ void DISPATCHER (u32 timer)
       if (FLAG_DWN(&POINTER_ETHERNET_RERUN))
       {
         IO("~0 time;");
-        Transf("Выполняем отложенную задачу по перекофигурированию МАК ячеек 072!\r\n");
+        Transf("Рестарт МАК ячеек 072!\r\n");
         CMD_MAC_RECONF ();
         return;
       } else
        if (FLAG_DWN(&POINTER_TEST_485))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_485_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		FUNC_FLAG_UP (&POINTER_TEST_485_REQ,300);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Посылаем код по шине 485!\r\n");
         tmp0=ADR_SLAVE[1];//
@@ -4277,6 +4308,7 @@ void DISPATCHER (u32 timer)
 		FUNC_FLAG_UP (&POINTER_TEST_SPI_REQ,10);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Посылаем код по шине SPI!\r\n");
+        FLAG_ASQ_TEST_SPI=0;
         tmp0=ADR_SLAVE[1];//
         u_out("Adr:",ADR_SLAVE[1]);
         SPI_BP_WRITE (tmp0,0xDEEDBEEF);//посылаем код по адресу ADR_SLAVE[1]
@@ -4296,7 +4328,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_JTAG))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,400);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Опрашиваем шину JTAG!\r\n");
         FLAG_ASQ_TEST_JTAG=0;
@@ -4317,7 +4349,7 @@ void DISPATCHER (u32 timer)
         if (jtag_dev_count==2)
         {
         	if (jtag_devs[1].idcode==0x2a020dd)
-        	{     Transf("Тест пройден!\r\n"   );FLAG_ASQ_TEST_SPI=1;}
+        	{     Transf("Тест пройден!\r\n"   );FLAG_ASQ_TEST_JTAG=1;}
 		    else  Transf("Тест не пройден!\r\n");
         } 
 
