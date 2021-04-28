@@ -520,7 +520,7 @@ typedef struct  //эта структура описывает указател�
   u32 timer;
 } POINTER;
 
-#define PNT_BUF 11
+#define PNT_BUF 32
 //---------------------------
 typedef struct SYS_STATE_BOARD   // объявляю структуру 
 {
@@ -600,7 +600,8 @@ void REQ_VERSIYA (void);
 void answer_translated (u32 );
 void req_col ();
 void FUNC_FLAG_UP (POINTER *,u32);
-
+u8 FLAG_DWN (POINTER *);
+void SPI_BP_WRITE (u32 ,u32 );
 //-------------JTAG--------------
 void JTAG_SCAN (void);
 u8 SCAN_N (void);

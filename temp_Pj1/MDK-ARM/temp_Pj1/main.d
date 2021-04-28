@@ -40,3 +40,7 @@
 .\temp_pj1\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 .\temp_pj1\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
 .\temp_pj1\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\temp_pj1\main.o: ../Src/jtagtap.h
+.\temp_pj1\main.o: ../Src/jtag_scan.h
+.\temp_pj1\main.o: ../Src/jtagtap.h
+.\temp_pj1\main.o: ../Src/jtag_devs.h

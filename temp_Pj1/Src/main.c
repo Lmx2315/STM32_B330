@@ -70,7 +70,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x270420211729;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x280420211445;//номер версии прошивки 10-52 время и 02-04-2021 дата
 u32 IP_my=0;
 u8 PORT_my=0;
 
@@ -234,22 +234,26 @@ u32 SLAVE_IP1      =0x0103013d;
 u32 SLAVE_DEST_IP0 =0x01030101;
 u32 SLAVE_DEST_IP1 =0x01030102;
 //------------------------------------------------------
-u8  FLAG_ASQ_TEST_485=0;    //флаг ответа на запрос теста по 485 шине
+u8  FLAG_ASQ_TEST_485 =0;    //флаг ответа на запрос теста по 485 шине
+u8  FLAG_ASQ_TEST_JTAG=0;    //флаг ответа на запрос теста по SPI шине
+u8  FLAG_ASQ_TEST_SPI =0;    //флаг ответа на запрос теста по JTAG шине
 
-POINTER  PNT[PNT_BUF];  //массив указателей на отложенные задачи
-/*
-POINTER  POINTER_TEST_485_REQ;   0  //флаг запускающий ожидание ответа на запрос по шине 485 
-POINTER  POINTER_TEST_485;       1  //флаг запускающий тест проверки шины 485
-POINTER  POINTER_TEST_SPI;       2  //флаг запускающий тест проверки шины SPI
-POINTER  POINTER_TEST_JTAG;      3  //флаг запускающий тест проверки шины JTAG
-POINTER  POINTER_ADR_COLLECT;    4  //флаг запускающий сбор адресов с бекплейнов
-POINTER  POINTER_IP0_SETUP;      5  //флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
-POINTER  POINTER_IP1_SETUP;      6  //флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
-POINTER  POINTER_DEST_IP0_SETUP; 7  //флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
-POINTER  POINTER_DEST_IP1_SETUP; 8  //флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
-POINTER  POINTER_ADR_REQ;        9  //флаг запроса адреса от слейва на бэкплейне, поднимается когда запрашивается 
-POINTER  POINTER_ETHERNET_RERUN; 10 //флаг по которому отсылается команда для переконфигурирования маков ячеек 072
-*/
+POINTER * PNT[PNT_BUF];  //массив указателей на отложенные задачи
+
+POINTER  POINTER_TEST_485_REQ;  // 0  флаг запускающий ожидание ответа на запрос по шине 485 
+POINTER  POINTER_TEST_485;      // 1  флаг запускающий тест проверки шины 485
+POINTER  POINTER_TEST_SPI_REQ;  // 2  флаг запускающий ожидание ответа на запрос по шине SPI 
+POINTER  POINTER_TEST_SPI;      // 2  флаг запускающий тест проверки шины SPI
+POINTER  POINTER_TEST_JTAG_REQ;  // 3  флаг запускающий ожидание ответа на запрос по шине JTAG 
+POINTER  POINTER_TEST_JTAG;     // 3  флаг запускающий тест проверки шины JTAG
+POINTER  POINTER_ADR_COLLECT;   // 4  флаг запускающий сбор адресов с бекплейнов
+POINTER  POINTER_IP0_SETUP;     // 5  флаг запускающий раздачу IP0 адресов кассетам 072 на бекплейне
+POINTER  POINTER_IP1_SETUP;     // 6  флаг запускающий раздачу IP1 адресов кассетам 072 на бекплейне
+POINTER  POINTER_DEST_IP0_SETUP;// 7  флаг запускающий раздачу DEST_IP0 адресов кассетам 072 на бекплейне
+POINTER  POINTER_DEST_IP1_SETUP;// 8  флаг запускающий раздачу DEST_IP1 адресов кассетам 072 на бекплейне
+POINTER  POINTER_ADR_REQ;       // 9  флаг запроса адреса от слейва на бэкплейне, поднимается когда запрашивается 
+POINTER  POINTER_ETHERNET_RERUN;// 10 флаг по которому отсылается команда для переконфигурирования маков ячеек 072
+
 u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
 u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
 u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
@@ -266,6 +270,15 @@ u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
 
 u64 ADRES_SENDER_CMD=0; //тут храним адрес компьютера управления, кто запрашивает у нас квитанции
 u8 FLAG_ADRES_SENDER_CMD=0;//флаг того что есть куда отправлять квитанции
+//-----------------------------------------------------------------------------
+//                       JTAG
+#include "jtagtap.h"
+#include "jtag_scan.h"
+#include "jtag_devs.h"
+
+extern jtag_dev_t jtag_devs[JTAG_MAX_DEVS+1];
+extern int jtag_dev_count;
+
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -1485,6 +1498,20 @@ void PRINT_SERV_ID (void)
 		}
 	}		
 }
+
+void SPI_BP_WRITE (u32 adr,u32 data)
+{
+  adr=(adr<<4)|0x2;
+  FPGA_wSPI (32,adr,data);
+}
+
+u32 SPI_BP_READ (u32 adr)
+{
+  u32 tmp0;
+  adr=(adr<<4)|0x3;
+  tmp0=FPGA_rSPI (32,adr);
+  return tmp0;
+}
 //----------------------------------------------------------
 void info ()
 {
@@ -1726,6 +1753,7 @@ if (strcmp(Word,"JTAG2_SCAN")==0)
      Transf ("принял JTAG_SCAN\r"    );
      Transf("\r"); 
 	 //--------------------
+	 /*
 		 u8 list[2]; //массив длин IR регистров - их число должно быть по числу устройств на шине 
 			list[0]=10;
 			list[1]=10;
@@ -1735,7 +1763,7 @@ if (strcmp(Word,"JTAG2_SCAN")==0)
 			list[5]=10;
 			list[6]=10;
 			list[7]=10;
-			list[1]=0;
+			list[1]=0;*/
 //	 crc_comp=jtag_scan(list,crc_comp); 
 	 crc_comp=jtag_scan(NULL,crc_comp); 
    } else
@@ -2240,7 +2268,7 @@ void BP_start (u16 a)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
-        FUNC_FLAG_UP (&PNT[4],7000);//ставим отложенную задачу для опроса кассет на бекплейне
+        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -2890,9 +2918,17 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
  if (msg_type==MSG_REQ_TEST_485)
  {
     ARRAY_DATA(FLAG_ASQ_TEST_485);
+ }else
+ if (msg_type==MSG_REQ_TEST_SPI)
+ {
+    ARRAY_DATA(FLAG_ASQ_TEST_SPI);
+ }else
+ if (msg_type==MSG_REQ_TEST_JTAG)
+ {
+    ARRAY_DATA(FLAG_ASQ_TEST_JTAG);
  }
+       
 
-        
   SYS_CMD_MSG(
         id,//реестр
         &INVOICE[ADR],  //структура квитанций 
@@ -3720,7 +3756,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     {
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
   //    req_col();
-      FUNC_FLAG_UP (&PNT[4],1000);//ставим отложенную задачу для опроса кассет на бекплейне
+      FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//ставим отложенную задачу для опроса кассет на бекплейне
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
       ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
@@ -3738,7 +3774,43 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     {
       Transf("начинаем тест проверку шины 485!\r\n");
       FLAG_ASQ_TEST_485=0;//сбрасываем флаг ответа на тест 485
-      FUNC_FLAG_UP (&PNT[1],10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
+      FUNC_FLAG_UP (&POINTER_TEST_485,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+
+      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+      id,             //указатель на реестр
+      &INVOICE[ADR],  //указатель на структуру квитанции
+      i,              //индекс команды в реестре
+      MSG_CMD_OK,     //сообщение квитанции
+      0,              //данные квитанции
+      TIME_SYS        //текущее системное время 
+      );  
+
+      SERV_ID_DEL (id,i);//удаляем команду из реестра
+    }else
+       if (id->CMD_TYPE[i]==CMD_TEST_SPI)//команда начала теста проверки шины SPI
+    {
+      Transf("начинаем тест проверку шины SPI!\r\n");
+      FLAG_ASQ_TEST_SPI=0;//сбрасываем флаг ответа на тест 485
+      FUNC_FLAG_UP (&POINTER_TEST_SPI,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+
+      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+      id,             //указатель на реестр
+      &INVOICE[ADR],  //указатель на структуру квитанции
+      i,              //индекс команды в реестре
+      MSG_CMD_OK,     //сообщение квитанции
+      0,              //данные квитанции
+      TIME_SYS        //текущее системное время 
+      );  
+
+      SERV_ID_DEL (id,i);//удаляем команду из реестра
+    }else
+       if (id->CMD_TYPE[i]==CMD_TEST_JTAG)//команда начала теста проверки шины JTAG
+    {
+      Transf("начинаем тест проверку шины JTAG!\r\n");
+      FLAG_ASQ_TEST_JTAG=0;//сбрасываем флаг ответа на тест 485
+      FUNC_FLAG_UP (&POINTER_TEST_JTAG,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 
       ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
@@ -4082,7 +4154,7 @@ void REQ_VERSIYA (void)
 void answer_translated (u32 dat)
 {
   u8 adr=0;
-  if (PNT[9].timer>0)//флаг запроса ставится не равным нулю!
+  if (POINTER_ADR_REQ.timer>0)//флаг запроса ставится не равным нулю!
   {
     adr=NUMBER_OF_B072++;
     ADR_SLAVE[adr]=dat;
@@ -4120,111 +4192,163 @@ void CMD_MAC_RECONF ()
 //запускает отложенные задачи
 void DISPATCHER (u32 timer)
 {
-      if (PNT[4].FLAG==1)
+	u32 tmp0=0;
+	int i=0;
+
+      if (FLAG_DWN(&POINTER_ADR_COLLECT))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по сбору адресов!\r\n");
         req_col ();//запрашиваем адреса
-        FUNC_FLAG_UP (&PNT[9],2000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
-        PNT[4].FLAG=0;
+        FUNC_FLAG_UP (&POINTER_ADR_REQ,2000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
         return;
       } else
-
-      if (PNT[9].FLAG==1)
+      if (FLAG_DWN(&POINTER_ADR_REQ))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по выводу количества 072!\r\n");
         SLAVE_COUNT ();
-        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&PNT[5],100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
-        PNT[9].FLAG=0;
+        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
         return;
       } else
-
-      if (PNT[5].FLAG==1)
+      if (FLAG_DWN(&POINTER_IP0_SETUP))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
         SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP (&PNT[6],100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
-        PNT[5].FLAG=0;
+        FUNC_FLAG_UP (&POINTER_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
-      } else  
-
-      if (PNT[6].FLAG==1)
+      } else
+      if (FLAG_DWN(&POINTER_IP1_SETUP))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP  (&PNT[7],100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
-        PNT[6].FLAG=0;
+        FUNC_FLAG_UP  (&POINTER_DEST_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
-
-      if (PNT[7].FLAG==1)
+      if (FLAG_DWN(&POINTER_DEST_IP0_SETUP))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке DEST_IP0!\r\n");
         SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP       (&PNT[8],100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
-        PNT[7].FLAG=0;
+        FUNC_FLAG_UP       (&POINTER_DEST_IP1_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
         return;
       } else
-
-      if (PNT[8].FLAG==1)
+      if (FLAG_DWN(&POINTER_DEST_IP1_SETUP))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по установке DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP       (&PNT[10],100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
-        PNT[8].FLAG=0;
+        FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
         return;
       } else
-
-      if (PNT[10].FLAG==1)
+      if (FLAG_DWN(&POINTER_ETHERNET_RERUN))
       {
         IO("~0 time;");
         Transf("Выполняем отложенную задачу по перекофигурированию МАК ячеек 072!\r\n");
         CMD_MAC_RECONF ();
-        PNT[10].FLAG=0;
         return;
       } else
-
-       if (PNT[1].FLAG==1)
+       if (FLAG_DWN(&POINTER_TEST_485))
       {
-		PNT[1].FLAG=0;
-		FUNC_FLAG_UP (&PNT[0],1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		FUNC_FLAG_UP (&POINTER_TEST_485_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Посылаем код по шине 485!\r\n");
-        u8 tmp0=ADR_SLAVE[1];//порядковый номер блока хранится в алфавитном виде!
+        tmp0=ADR_SLAVE[1];//
         BUS_485_TEST (tmp0);
         return;
-      } else
-		
-	    if (PNT[0].FLAG==1)
+      } else		
+	    if (FLAG_DWN(&POINTER_TEST_485_REQ))
       {
-		PNT[0].FLAG=0;
         IO("~0 time;");
         Transf("Проверяем результат теста шины 485!\r\n");
         if (FLAG_ASQ_TEST_485==1) Transf("Тест пройден!\r\n");
 		    else                  Transf("Тест не пройден!\r\n");
         MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_485);//готовим квитанцию серверу по результатам теста
         return;
-      }
+      } else
+       if (FLAG_DWN(&POINTER_TEST_SPI))
+      {
+		FUNC_FLAG_UP (&POINTER_TEST_SPI_REQ,10);//ставим отложенную задачу для проверки наличия ответа на тест 485
+        IO("~0 time;");
+        Transf("Посылаем код по шине SPI!\r\n");
+        tmp0=ADR_SLAVE[1];//
+        u_out("Adr:",ADR_SLAVE[1]);
+        SPI_BP_WRITE (tmp0,0xDEEDBEEF);//посылаем код по адресу ADR_SLAVE[1]
+        return;
+      }else		
+	    if (FLAG_DWN(&POINTER_TEST_SPI_REQ))
+      {
+        IO("~0 time;");
+        Transf("Проверяем результат теста шины SPI!\r\n");
+        tmp0=ADR_SLAVE[1];//
+        tmp0=SPI_BP_READ (tmp0);//считываем код из кассеты
+        x_out("Ancwer:",tmp0);
+        if (tmp0==0xDEEDBEEF) {Transf("Тест пройден!\r\n");FLAG_ASQ_TEST_SPI=1;}
+		    else               Transf("Тест не пройден!\r\n");
+        MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_SPI);//готовим квитанцию серверу по результатам теста
+        return;
+      } else
+       if (FLAG_DWN(&POINTER_TEST_JTAG))
+      {
+		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,1000);//ставим отложенную задачу для проверки наличия ответа на тест 485
+        IO("~0 time;");
+        Transf("Опрашиваем шину JTAG!\r\n");
+        FLAG_ASQ_TEST_JTAG=0;
+        tmp0=jtag_scan(NULL,0);
+        u_out("tmp0:",tmp0);
+        return;
+      }else		
+	    if (FLAG_DWN(&POINTER_TEST_JTAG_REQ))
+      {
+        IO("~0 time;");
+        Transf("Проверяем результат теста шины JTAG!\r\n");
+        u_out("Количество устройств:",jtag_dev_count);
+        for(i=0;i<jtag_dev_count;i++)
+        {
+          un_out("",i);Transf("] ");xn_out("",jtag_devs[i].idcode);Transf(" - ");Transf(jtag_devs[i].descr);Transf("\r\n");
+        }        
+
+        if (jtag_dev_count==2)
+        {
+        	if (jtag_devs[1].idcode==0x2a020dd)
+        	{     Transf("Тест пройден!\r\n"   );FLAG_ASQ_TEST_SPI=1;}
+		    else  Transf("Тест не пройден!\r\n");
+        } 
+
+        MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_JTAG);//готовим квитанцию серверу по результатам теста
+        return;
+      } 	 
 
   }
 
 //эта процедура поднимает переданный ей флаг и устанавливает таймаут на заданое время
 void FUNC_FLAG_UP (POINTER *p,u32 time)
 {
+  int i=0;
   p->FLAG=0;
   p->timer=time;
+  while (PNT[i]!=0) {i++;};//ищем свободное место в массиве указателей
+  PNT[i]=p;
+
   Transf("Поднимаем флаг отложенного задания!\r\n");
   IO("~0 time;");
   u_out("timeout:",time);
+}
+
+//эта процедура снимает переданный ей флаг
+u8 FLAG_DWN (POINTER *p)
+{
+  if (p->FLAG==1)
+  {
+  	  p->FLAG=0;
+  	  return 1;
+  } else return 0;
 }
 
 void FTIME_OF_WORK ()
@@ -4242,6 +4366,8 @@ int main(void)
 	int i=0;
   /* USER CODE BEGIN 1 */
   Adress=0x30; //адресс кассеты 
+
+  for (i=0;i<PNT_BUF;i++) PNT[i]=NULL;//обнуляем ассив указателей
   /* USER CODE END 1 */
   /* MCU Configuration--------------------------------------------------------*/
 
