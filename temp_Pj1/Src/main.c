@@ -1524,23 +1524,26 @@ void info ()
 
 void BUS_485_TEST (u8 a)
 {
-   u8 Str[15];
+   u8 Str[17];
+   int n=0;
 
-   Str[ 0]='~';
-   Str[ 1]=0x30+a;
-   Str[ 2]=' ';
-   Str[ 3]='r';
-   Str[ 4]='s';
-   Str[ 5]='4';
-   Str[ 6]='8';
-   Str[ 7]='5';
-   Str[ 8]='_';
-   Str[ 9]='t';
-   Str[10]='e';
-   Str[11]='s';
-   Str[12]='t';
-   Str[13]=';';
-   Str[14]=0x00;
+   Str[n++]=' ';   //0
+   Str[n++]='~';   //1
+   Str[n++]=0x30+a;//2
+   Str[n++]=' ';   //3
+   Str[n++]='r';   //4
+   Str[n++]='s';   //5
+   Str[n++]='4';   //6
+   Str[n++]='8';   //7
+   Str[n++]='5';   //8
+   Str[n++]='_';   //9
+   Str[n++]='t';   //10
+   Str[n++]='e';   //11
+   Str[n++]='s';   //12
+   Str[n++]='t';   //13
+   Str[n++]=';';   //14
+   Str[n++]=';';   //15
+   Str[n++]=0x00;  //16
 
    Transf2(Str);
    Transf("Послан код: ");
@@ -4204,7 +4207,7 @@ void DISPATCHER (u32 timer)
         IO("~0 time;");
         Transf("Идёт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
-        FUNC_FLAG_UP (&POINTER_ADR_REQ,2000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
+        FUNC_FLAG_UP (&POINTER_ADR_REQ,2500);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
         return;
       } else
       if (FLAG_DWN(&POINTER_ADR_REQ))
@@ -4287,7 +4290,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_485))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_485_REQ,300);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		    FUNC_FLAG_UP (&POINTER_TEST_485_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Посылаем код по шине 485!\r\n");
         tmp0=ADR_SLAVE[1];//
@@ -4328,7 +4331,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_JTAG))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,400);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Опрашиваем шину JTAG!\r\n");
         FLAG_ASQ_TEST_JTAG=0;
