@@ -4042,7 +4042,7 @@ void CONTROL_SYS (void)
   
   u8 err=0;
   if (B330.TEMP_MAX>5000) err++;
-  if (B330.I>300)         err++;
+  if (B330.I>2500)        err++;
   if (B330.U_min<1100)    err++;
   if (B330.U_max>1250)    err++;
   if (B330.P    >30000)   err++;
