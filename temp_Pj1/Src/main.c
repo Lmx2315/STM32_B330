@@ -70,9 +70,9 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 500
 
-u64 STM32_VERSION = 0x210520212105;//номер версии прошивки 10-52 время и 02-04-2021 дата
+u64 STM32_VERSION = 0x240520211751;//номер версии прошивки 12-02 время и 24-05-2021 дата
 u32 IP_my=0;
-u8 PORT_my=0;
+u16 PORT_my=0;
 
 u32 TIMER_CONTROL_SYS;   		//переменная таймера контроля состояния системы блока питания
 
@@ -1998,10 +1998,16 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
      crc_comp =atoi(DATA_Word); 
      u_out ("принял ANS:",crc_comp);
      answer_translated (crc_comp);     
-   } else  
+   } else   
  if (strcmp(Word,"Show_worktime")==0) //
    {
     u_out ("принял Show_worktime:",TIME_OF_WORK); 
+   } else
+  if (strcmp(Word,"MSG_ADR")==0) //пришло сообщение с позицией на бекплейне, какая-то касета перезагрузилась и просит реинициализации
+   {
+    crc_comp =atoi(DATA_Word); 
+    u_out ("принял MSG_ADR:",crc_comp); 
+    FUNC_FLAG_UP (&POINTER_ADR_COLLECT,100);//ставим отложенную задачу для опроса кассет на бекплейне
    }
  } 
 	  for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
@@ -2279,7 +2285,7 @@ void BP_start (u16 a)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
 		IO("~0 enable_lm:1;");//включаем все м/мы LM
-        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,5000);//ставим отложенную задачу для опроса кассет на бекплейне
+    FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -4552,15 +4558,15 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		TIME_OF_SECOND++;//подсчитываем число секунд с момента включения			
 	}; 
 
-    DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
+  DISPATCHER        (TIMER_TIMEOUT);//выполняет отложенные задачи
 	ALARM_SYS_TEMP    ();//сравниваем измеренную температуру с пороговым значением  
-    CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
-	CONTROL_POK 	  ();
-	LED_CONTROL 	  ();
+  CONTROL_SYS       ();//проверяем параметры системы: температуру , ток потребление и т.д.
+	CONTROL_POK 	    ();
+	LED_CONTROL 	    ();
 	CONTROL_T1HZ_MK   ();
 	CMD_search        (&ID_SERV1,&SERV1);
-	SEND_UDP_MSG 	  ();
-    UART_DMA_TX  	  ();
+	SEND_UDP_MSG 	    ();
+  UART_DMA_TX  	    ();
 	UART_DMA_TX2  	  ();
 	UART_CNTR         (&huart2);//тут управляем драйвером 485
 	FTIME_OF_WORK     ();     //тут следим за временем наработки

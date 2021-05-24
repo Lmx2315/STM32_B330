@@ -420,8 +420,10 @@ u8 NUMBER_BLOK =NB;
 
 uint8 MAC[6]     ={0x64, 0xA2, 0x32, 0x01, 0x03,NB};//MAC Address
 uint8 IP [4]     ={1, 3,  3,NB+60};//IP Address  
-uint8 GateWay[4] ={1, 3,  3,  253};// Gateway Address
-uint8 SubNet [4] ={255, 255, 0,  0};//SubnetMask Address
+uint8 GateWay[4] ={1, 3,  3,   1 };// Gateway Address
+uint8 SubNet [4] ={255, 255,255,0};//SubnetMask Address
+
+u16 SERVER_DEST_PORT=49000;//порт удалённого сервера куда шлём UDP
 
 extern u32 IP_my;
 extern u8 PORT_my;
@@ -2263,7 +2265,7 @@ u32 SEND_UDP_MSG (void)
 	  if (INVOICE[i].MSG.Num_cmd_in_msg>0) 
 	  {
 		 error=TX_MSG_BUFF (&INVOICE[i],TX_BUF,TX_MAX_BUF_SIZE);//заполняем транспортный массив
-		 SEND_udp(0, 3001,destip_UDP,1000);//отправляем квитанцию по UDP	
+		 SEND_udp(0, 3001,destip_UDP,SERVER_DEST_PORT);//отправляем квитанцию по UDP	
 		 //x_out("IP_dest  <revers byte`s!>:",destip_UDP);		
 	  }
 	}

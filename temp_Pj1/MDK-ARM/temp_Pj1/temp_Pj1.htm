@@ -3,11 +3,11 @@
 <title>Static Call Graph - [.\temp_Pj1\temp_Pj1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\temp_Pj1\temp_Pj1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Fri May 21 17:44:34 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Mon May 24 17:51:53 2021
 <BR><P>
-<H3>Maximum Stack Usage =        328 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        320 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
-main &rArr; CMD_search &rArr; FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+main &rArr; CMD_search &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 <P>
 <H3>
 Mutually Recursive functions
@@ -16,6 +16,7 @@ Mutually Recursive functions
  <LI><a href="#[2]">HardFault_Handler</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[2]">HardFault_Handler</a><BR>
  <LI><a href="#[3]">MemManage_Handler</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[3]">MemManage_Handler</a><BR>
  <LI><a href="#[5]">UsageFault_Handler</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[5]">UsageFault_Handler</a><BR>
+ <LI><a href="#[7c]">FUNC_FLAG_UP</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[7b]">IO</a><BR>
 </UL>
 <P>
 <H3>
@@ -574,7 +575,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[79]"></a>BP_start</STRONG> (Thumb, 126 bytes, Stack size 24 bytes, main.o(i.BP_start))
-<BR><BR>[Stack]<UL><LI>Max Depth = 296<LI>Call Chain = BP_start &rArr; FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 288<LI>Call Chain = BP_start &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 <LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf
@@ -611,7 +612,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[81]"></a>CMD_search</STRONG> (Thumb, 1550 bytes, Stack size 56 bytes, main.o(i.CMD_search))
-<BR><BR>[Stack]<UL><LI>Max Depth = 328<LI>Call Chain = CMD_search &rArr; FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 320<LI>Call Chain = CMD_search &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SERV_ID_DEL
 <LI><a href="#[83]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ERROR_CMD_MSG
@@ -661,7 +662,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[93]"></a>DISPATCHER</STRONG> (Thumb, 880 bytes, Stack size 32 bytes, main.o(i.DISPATCHER))
-<BR><BR>[Stack]<UL><LI>Max Depth = 304<LI>Call Chain = DISPATCHER &rArr; FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 296<LI>Call Chain = DISPATCHER &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[9b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;jtag_scan
 <LI><a href="#[9d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xn_out
@@ -838,13 +839,15 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[7c]"></a>FUNC_FLAG_UP</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, main.o(i.FUNC_FLAG_UP))
-<BR><BR>[Stack]<UL><LI>Max Depth = 272<LI>Call Chain = FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 40 + In Cycle
+<LI>Call Chain = FUNC_FLAG_UP &rArr;  IO (Cycle)
 </UL>
 <BR>[Calls]<UL><LI><a href="#[77]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;u_out
 <LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Transf
 <LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IO
 </UL>
-<BR>[Called By]<UL><LI><a href="#[93]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DISPATCHER
+<BR>[Called By]<UL><LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IO
+<LI><a href="#[93]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DISPATCHER
 <LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;CMD_search
 <LI><a href="#[79]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;BP_start
 </UL>
@@ -1504,7 +1507,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[7b]"></a>IO</STRONG> (Thumb, 3652 bytes, Stack size 56 bytes, main.o(i.IO))
+<P><STRONG><a name="[7b]"></a>IO</STRONG> (Thumb, 3674 bytes, Stack size 56 bytes, main.o(i.IO))
 <BR><BR>[Stack]<UL><LI>Max Depth = 264<LI>Call Chain = IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[9b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;jtag_scan
@@ -1537,6 +1540,7 @@ Global Symbols
 <LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LM_TEMP
 <LI><a href="#[107]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LM_MFR_MODEL
 <LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LM_MFR_ID
+<LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FUNC_FLAG_UP
 <LI><a href="#[aa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_wSPI
 <LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_rSPI
 <LI><a href="#[a0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DS4520_read
@@ -1765,8 +1769,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[101]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;JTAG_SCAN
 </UL>
 
-<P><STRONG><a name="[11d]"></a>SEND_UDP_MSG</STRONG> (Thumb, 70 bytes, Stack size 32 bytes, w5200.o(i.SEND_UDP_MSG))
-<BR><BR>[Stack]<UL><LI>Max Depth = 272<LI>Call Chain = SEND_UDP_MSG &rArr; SEND_udp &rArr; sendto &rArr; send_data_processing &rArr; write_data &rArr; wiz_write_buf &rArr; spi4send8 &rArr; HAL_SPI_TransmitReceive &rArr; SPI_EndRxTxTransaction &rArr; SPI_WaitFlagStateUntilTimeout
+<P><STRONG><a name="[11d]"></a>SEND_UDP_MSG</STRONG> (Thumb, 68 bytes, Stack size 24 bytes, w5200.o(i.SEND_UDP_MSG))
+<BR><BR>[Stack]<UL><LI>Max Depth = 264<LI>Call Chain = SEND_UDP_MSG &rArr; SEND_udp &rArr; sendto &rArr; send_data_processing &rArr; write_data &rArr; wiz_write_buf &rArr; spi4send8 &rArr; HAL_SPI_TransmitReceive &rArr; SPI_EndRxTxTransaction &rArr; SPI_WaitFlagStateUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[11e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TX_MSG_BUFF
 <LI><a href="#[11f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SEND_udp
@@ -2431,7 +2435,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[43]"></a>main</STRONG> (Thumb, 672 bytes, Stack size 0 bytes, main.o(i.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 328<LI>Call Chain = main &rArr; CMD_search &rArr; FUNC_FLAG_UP &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 320<LI>Call Chain = main &rArr; CMD_search &rArr; IO &rArr; LM_v &rArr; HAL_I2C_Master_SMBA_block_recieve &rArr; I2C_MasterRequestRead &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[116]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_SPI5_Init
 <LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_SPI4_Init
