@@ -2594,7 +2594,11 @@ u8 LM_MFR_ID (u8 z)
 	return state;
 }
 
-
+float okrug(float chislo, long znaki)
+{
+    float res;
+    return round(chislo * pow(10, znaki)) / pow(10, znaki);
+}
 
 int LM_TEMP (u8 z)
 {
@@ -2655,8 +2659,10 @@ int LM_TEMP (u8 z)
 	x=(1/m)*(y*(powf(10,r))-b);
 	
 //	f_out("t=",x);
-	
-	value=x*100;
+  x=okrug(x,0);
+  value=x;
+  value=value*100;
+
 	
 	if (error==1) value=0xffffffff;
 
@@ -2724,8 +2730,8 @@ int LM_v (u8 z)
 	x=(1/m)*(y*(powf(10,r))-b);
 	
 //	f_out("U=",x);
-	
-    value=x*100;
+	x=okrug(x,1);
+  value=x*100;
 	
 	if (error==1) value=0xffffffff;
 	
@@ -2779,7 +2785,8 @@ int LM_aux_u (u8 z)
 	
 //	f_out("U=",x);
 	
-	value=x*100;
+	 x=okrug(x,1);
+  value=x*100;
 	
 	if (error==1) value=0xffffffff;
 	
@@ -2805,7 +2812,7 @@ int LM_in_i (u8 z)
 	 int value=0;
 	 
 	 float x=0;
-	 float m=6898;//5 ìÎì
+	 float m=68985.849;//5 ìÎì
 	 float y=0;
 	 float r=2;
 	 float b=0;//-1833
@@ -2833,7 +2840,8 @@ int LM_in_i (u8 z)
 	
 //	f_out("I=",x);
 	
-	value=x*100;
+	 x=okrug(x,1);
+  value=x*100;
 	
 	if (error==1) value=0xffffffff;
 	
@@ -2859,9 +2867,9 @@ int LM_in_p (u8 z)
 	 int value;
 	 
 	 float x=0;
-	 float m=2745;
+	 float m=27.45;
 	 float y=0;
-	 float r=3;
+	 float r=0;
 	 float b=0;
 	 int   p=0;
 	 
@@ -2887,8 +2895,9 @@ int LM_in_p (u8 z)
 	
 //	f_out("P=",x);
 	
-	value=x*100;
-	
+	 x=okrug(x,1);
+  value=x*100;
+
 	if (error==1) value=0xffffffff;
 	
 //	u_out("i2c:",error);
