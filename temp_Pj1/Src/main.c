@@ -266,6 +266,9 @@ u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
 u8 SCH_TST1=0;//счётчик числа попыток
 u8 SCH_TST2=0;
 u8 SCH_TST3=0;
+int index_ch;
+float TMP_f=0;
+u8 FLAG_CMD=0;
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -561,14 +564,6 @@ static void MX_SPI2_Init(void)
   */
 static void MX_SPI3_Init(void)
 {
-
-  /* USER CODE BEGIN SPI3_Init 0 */
-
-  /* USER CODE END SPI3_Init 0 */
-
-  /* USER CODE BEGIN SPI3_Init 1 */
-
-  /* USER CODE END SPI3_Init 1 */
   /* SPI3 parameter configuration*/
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
@@ -577,7 +572,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -586,9 +581,6 @@ static void MX_SPI3_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI3_Init 2 */
-
-  /* USER CODE END SPI3_Init 2 */
 
 }
 
@@ -989,7 +981,15 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
+//--------SPI2--------------------
+u8 SPI_Send(u8 data) 
+{
+  u8 a1;
+  u8  b;
+  a1 = (data)&0xff;  
+  HAL_SPI_TransmitReceive(&hspi3, &a1, &b,1, 5000); 
+  return b; 
+}
 
 void spi4send32 (u32 d) //32 бита
 {
@@ -1335,43 +1335,12 @@ u8 spisend8 (u8 d) //8 бит
 {
 	u8 a1;
 	u8  b;
-  //HAL_SPI_TransmitReceive(&hspi3, &address, &data, sizeof(data), 5000);
-
   a1 = (d)      &0xff;
-  
   HAL_SPI_TransmitReceive(&hspi3, &a1, &b,1, 5000); 
   return b; 
 }
   
-/*  
-u64 FPGA_rSPI (u8 size,u8 adr)
-{
-   u64 d[8];
-   u8 i,k;
-   u8 adr_a=0;
-   u64 value;
-   
-   k=size/8;
-   adr_a=adr;
 
-//   delay_us(1);
- 
-   spisend8 (adr_a); //
-   for (i=0;i<(size/8);i++) d[i] = spisend8 (0);  //считываем данные
-//   delay_us(1);  
-   
-   if (k==1) value =   d[0];
-   if (k==2) value =  (d[0]<< 8)+ d[1];
-   if (k==3) value =  (d[0]<<16)+(d[1]<< 8)+ d[2];
-   if (k==4) value =  (d[0]<<24)+(d[1]<<16)+(d[2]<< 8)+ d[3];
-   if (k==5) value =  (d[0]<<32)+(d[1]<<24)+(d[2]<<16)+(d[3]<< 8)+ d[4];
-   if (k==6) value =  (d[0]<<40)+(d[1]<<32)+(d[2]<<24)+(d[3]<<16)+(d[4]<< 8)+ d[5];
-   if (k==7) value =  (d[0]<<48)+(d[1]<<40)+(d[2]<<32)+(d[3]<<24)+(d[4]<<16)+(d[5]<< 8)+ d[6];
-   if (k==8) value =  (d[0]<<56)+(d[1]<<48)+(d[2]<<40)+(d[3]<<32)+(d[4]<<24)+(d[5]<<16)+(d[6]<<8)+d[7];
-
-   return value;
-}
-*/
 
 u64 FPGA_rSPI (u8 size,u8 adr)
 {
@@ -1468,6 +1437,83 @@ u32 FPGA_wSPI (u8 size,u8 adr,u64 data)
    return 0;
 }  
 //-----------------------------------------------------------------
+//  EPCS128 flash
+
+u8 spi_EPCS_STATUS (void)			//счтывает статусный байт во флеш , нулевой бит - бит записи, его проверЯем
+{
+	u8 m[1];
+	spi_EPCS_rd(READ_STATUS,m,1);
+	return m[0];
+}
+
+void spi_EPCS_rd (u8 cmd,u8 d[],u32 n) //чтение данных
+{  
+   u32 i=0;
+   CS_EPCS1(0);
+   CS_EPCS2(0);
+   spisend8(cmd);//
+   for (i=0;i<n;i++)  
+   {
+	   d[i]=spisend8(0);  
+   }
+   CS_EPCS1(1);
+   CS_EPCS2(1);
+}
+
+void spi_EPCS_read (u8 cmd,u32 adr,u8 d[],u32 n) //чтение данных
+{  
+   u32 i=0;
+   CS_EPCS1(0);
+   spisend8(cmd);//
+   spisend8((adr>>16)&0xff);//
+   spisend8((adr>> 8)&0xff);//
+   spisend8( adr     &0xff);//
+   for (i=0;i<n;i++)  
+   {
+	   Transf(".");
+	   d[i]=spisend8(0);  
+   }
+   CS_EPCS1(1);
+}
+
+void spi_EPCS_write (u8 cmd,u32 adr,u8 d[],u32 n) //запись данных в один сектор - 256 байт!!!
+{  
+   u32 i=0;
+   CS_EPCS1(0);  
+   spisend8(cmd);//
+   spisend8((adr>>16)&0xff);//
+   spisend8((adr>> 8)&0xff);//
+   spisend8( adr     &0xff);//
+   
+   for (i=0;i<n;i++)  
+   {
+	   Transf(".");
+	   spisend8(d[i]);  
+   }
+   CS_EPCS1(1);
+  Transf("\r\n");
+}
+void spi_EPCS_ERASE_BULK (void) //разрешение записи во флеш
+{  
+   CS_EPCS1(0);  
+   spisend8(ERASE_BULK);//
+   CS_EPCS1(1);
+}
+
+void spi_EPCS_wr_ENABLE (void) //разрешение записи во флеш
+{  
+   CS_EPCS1(0);  
+   spisend8(WRITE_ENABLE);//
+   CS_EPCS1(1);
+}
+
+void spi_EPCS_wr_DISABLE (void) //разрешение записи во флеш
+{  
+   CS_EPCS1(0);  
+   spisend8(WRITE_DISABLE);//
+   CS_EPCS1(1);
+}
+//-----------------------------------------------------------------
 //             тестовый вывод "Хранилища"
 void PRINT_SERV (void)
 {
@@ -1559,6 +1605,8 @@ void BUS_485_TEST (u8 a)
 u32 crc_input=0u; 
 u32 crc_comp=0u;
 u8 Str[64];
+u8 bufer[32];
+u8 mas[300];
 
 u32 IO ( char* str)      // функция обработки протокола обмена
 {
@@ -1595,8 +1643,7 @@ u32 IO ( char* str)      // функция обработки протокола обмена
 		SCH_LENGHT_PACKET=0;
   }
   
-  while (i>0u)   //перегрузка принятого пакета в массив обработки
-  
+  while (i>0u)   //перегрузка принятого пакета в массив обработки  
   {  
 
 	if ((str[indexZ]==0x7e)&&(packet_flag==0))// обнаружено начало пакета
@@ -2009,9 +2056,90 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
     crc_comp =atoi(DATA_Word); 
     u_out ("принял MSG_ADR:",crc_comp); 
     FUNC_FLAG_UP (&POINTER_ADR_COLLECT,100);//ставим отложенную задачу для опроса кассет на бекплейне
-   }
+   } else
+      if (strcmp(Word,"EPCS_DEV_ID")==0) //only for EPCS128 !!!
+        {
+          Transf ("\r\nпринял EPCS_DEV_ID:\r\n");
+          spi_EPCS_rd(READ_DEV_ID,mas,3);
+          Transf ("\r\n");
+          if (mas[2]==0x18) Transf("recive: EPCS128\r\n");
+          x_out("mas[2]:",mas[2]);
+        } else
+      if (strcmp(Word,"EPCS_ID")==0) //
+        {
+          Transf ("\r\nпринял EPCS_ID:\r\n");
+          spi_EPCS_rd(0x20,mas,3);
+          Transf ("\r\n");
+          x_out("mas[0]:",mas[0]);
+          x_out("mas[1]:",mas[1]);
+          x_out("mas[2]:",mas[2]);
+          }  else
+      if (strcmp(Word,"EPCS_STATUS")==0) //
+        {
+          crc_comp =atoi(DATA_Word);
+          crc_input=atoi(DATA_Word2);
+          Transf ("\r\nпринял EPCS_STATUS:\r\n");
+          spi_EPCS_rd(READ_STATUS,mas,4);
+          Transf ("\r\n");
+          x_out("mas[0]:",mas[0]);
+          x_out("mas[1]:",mas[1]);
+          x_out("mas[2]:",mas[2]);
+          x_out("mas[3]:",mas[3]);
+          }  else
+        if (strcmp(Word,"EPCS_READ")==0) //
+          {
+            crc_comp =atoi(DATA_Word);
+            crc_input=atoi(DATA_Word2);
+            x_out ("\r\nпринял EPCS_READ:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+            
+            spi_EPCS_read(READ_BYTES,crc_comp,mas,256);//чтение 256 байт данных
+            Transf("\r\n---------------------------\r\n");
+            for (i=0;i<256;i++)
+            {
+              hn_out (mas[i+0],0);hn_out (mas[i+1],0);hn_out (mas[i+2],0);hn_out (mas[i+3],0);
+              i=i+3;
+              Transf("\r\n");	
+            }	
+    }else
+    if (strcmp(Word,"EPCS_WRITE_TEST")==0) //
+      {
+        crc_comp =atoi(DATA_Word);
+        crc_input=atoi(DATA_Word2);
+        x_out ("\r\nпринял EPCS_WRITE_TEST:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+        Transf("\r\n---------------------------\r\n");
+        
+        for (i=0;i<256;i++) mas[i]=i;
+          
+        spi_EPCS_wr_ENABLE(); //разрешаем запись во флеш
+        spi_EPCS_write(WRITE_BYTES,crc_comp,mas,256);
+        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+        }else
+    if (strcmp(Word,"EPCS_ERASE_SECTOR")==0) //
+      {
+        crc_comp =atoi(DATA_Word);
+        x_out ("\r\nпринял EPCS_ERASE_SECTOR:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+
+        spi_EPCS_wr_ENABLE();//разрешаем запись во флеш
+        spi_EPCS_write(ERASE_SECTOR,crc_comp,mas,0);
+        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+        }else 
+    if (strcmp(Word,"EPCS_ERASE_ALL")==0) //
+      {
+        crc_comp =atoi(DATA_Word);
+        x_out ("\r\nпринял EPCS_ERASE_ALL:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+
+        spi_EPCS_wr_ENABLE ();//разрешаем запись во флеш
+        spi_EPCS_ERASE_BULK();//стираем всЮ во флеш
+        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+        } else
+      if (strcmp(Word,"serial_w")==0) //
+        {
+          crc_comp =atoi(DATA_Word);
+          u_out ("принял serial_w:",crc_comp);  
+          SERIAL_NUMBER_WR (crc_comp);                  
+        } 
  } 
-	  for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
+	    for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)   DATA_Word[i]     =0x0;
       for (i=0u;i<buf_DATA_Word;  i++)  DATA_Word2[i]     =0x0;  
       for (i=0u;i<BUFFER_SR;i++)  
@@ -2732,7 +2860,7 @@ int LM_v (u8 z)
 	
 //	f_out("U=",x);
 //	x=okrug(x,2);
-  value=x*100;
+  value=x*100*B330.Corr_U[z-1];
 	
 	if (error==1) value=0xffffffff;
 	
@@ -2842,7 +2970,7 @@ int LM_in_i (u8 z)
 //	f_out("I=",x);
 	
 	// x=okrug(x,2);
-  value=x*100;
+  value=x*100*B330.Corr_I[z-1];
 	
 	if (error==1) value=0xffffffff;
 	
@@ -3576,7 +3704,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 		{
 			Transf("\r\n------\r\n");
 			Transf("Команда:установка времени!\r\n");
-			
+			FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -3591,47 +3719,20 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 					 ((u64)srv->MeM[idx4]<<24)|((u64)srv->MeM[idx5]<<16)|
 					 ((u64)srv->MeM[idx6]<< 8)|((u64)srv->MeM[idx7]<< 0);
 			IO("~0 time;");
-			Transf("\r\n------\r\n");		
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-			u_out("Номер отправителя:",ADR);
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-		} else
-		
+			Transf("\r\n------\r\n");					
+		} else		
 		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
 		{
 			//нет данных у команды
+      FLAG_CMD=1;
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 			ADRES_SENDER_CMD=ADR;
-//			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			
 			//------------------------------------
 			SYS_INFO_SEND_UDP (id,srv);
-			//-----------------------------------
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			
-//			Transf("Запрос состояния!\r\n");	
-//			un_out("[",TIME_SYS);Transf("]\r\n");
-		}	else
-		
+		}	else		
 		if (id->CMD_TYPE[i]==CMD_LED)//команда управления светодиодами на лицевой панели
 		{
+      FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -3640,24 +3741,10 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			TCA_WR(data);//выполняем команду
-			
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			
-			Transf("Светодиоды!\r\n");			
-		} else
-		
+		} else		
 		if (id->CMD_TYPE[i]==CMD_12V)//команда включения источника +12V
 		{
+      FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -3665,27 +3752,12 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
-			START_BP=data;//выполняем команду
-			
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+			START_BP=data;//выполняем команду			
 			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			
-			Transf("Управление питанием +12V!\r\n");
-			u_out("START_BP:",START_BP);
-		} else
-		
+		} else		
 		if (id->CMD_TYPE[i]==CMD_CH_UP)//команда включения канала питания, исправить длинну данных команды!!!
 		{
+      FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
 		//--------------Убрать в соответствии с протоколом из ТО на РЭС!!!!-----------------
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
@@ -3695,23 +3767,10 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			PWR_072 (data);//выполняем команду
-		
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			    //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			    //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				//данные квитанции
-			TIME_SYS	    //текущее системное время 
-			);	
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-			u_out("управляем питание каналов:",data);
 		} else
-
 		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда установки IP0 адреса определённой кассеты 072 
 		{
+      FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -3726,23 +3785,10 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       Transf("Пришёл IP0 для Мастера 072!\r\n");
       x_out("отправляем IP адрес:",data);
       u_out("В блок 072 №",adr_BPL);			
-		
-			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-			id,			        //указатель на реестр
-			&INVOICE[ADR],  //указатель на структуру квитанции
-			i, 			        //индекс команды в реестре
-			MSG_CMD_OK,	    //сообщение квитанции
-			0,				      //данные квитанции
-			TIME_SYS	      //текущее системное время 
-			);	
-
-			SERV_ID_DEL (id,i);//удаляем команду из реестра
-
 		} else
       if (id->CMD_TYPE[i]==CMD_SETUP_IP1)//команда установки IP0 адреса определённой кассеты 072 
     {
+      FLAG_CMD=1;
       idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
       idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
       idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -3756,95 +3802,85 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       Transf("Пришёл IP1 для Мастера 072!\r\n");
       x_out("отправляем IP адрес:",data);
       u_out("В блок 072 №",adr_BPL);      
-    
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-      id,             //указатель на реестр
-      &INVOICE[ADR],  //указатель на структуру квитанции
-      i,              //индекс команды в реестре
-      MSG_CMD_OK,     //сообщение квитанции
-      0,              //данные квитанции
-      TIME_SYS        //текущее системное время 
-      );  
-
-      SERV_ID_DEL (id,i);//удаляем команду из реестра
-
     } else
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
+      FLAG_CMD=1;
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
   //    req_col();
       FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//ставим отложенную задачу для опроса кассет на бекплейне
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-      id,             //указатель на реестр
-      &INVOICE[ADR],  //указатель на структуру квитанции
-      i,              //индекс команды в реестре
-      MSG_CMD_OK,     //сообщение квитанции
-      0,              //данные квитанции
-      TIME_SYS        //текущее системное время 
-      );  
-
-      SERV_ID_DEL (id,i);//удаляем команду из реестра
     } else
        if (id->CMD_TYPE[i]==CMD_TEST_485)//команда начала теста проверки шины 485
     {
+      FLAG_CMD=1;
       Transf("начинаем тест проверку шины 485!\r\n");
       FLAG_ASQ_TEST_485=0;//сбрасываем флаг ответа на тест 485
       FUNC_FLAG_UP (&POINTER_TEST_485,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-      id,             //указатель на реестр
-      &INVOICE[ADR],  //указатель на структуру квитанции
-      i,              //индекс команды в реестре
-      MSG_CMD_OK,     //сообщение квитанции
-      0,              //данные квитанции
-      TIME_SYS        //текущее системное время 
-      );  
-
-      SERV_ID_DEL (id,i);//удаляем команду из реестра
     }else
        if (id->CMD_TYPE[i]==CMD_TEST_SPI)//команда начала теста проверки шины SPI
     {
+      FLAG_CMD=1;
       Transf("начинаем тест проверку шины SPI!\r\n");
       FLAG_ASQ_TEST_SPI=0;//сбрасываем флаг ответа на тест 485
       FUNC_FLAG_UP (&POINTER_TEST_SPI,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-      id,             //указатель на реестр
-      &INVOICE[ADR],  //указатель на структуру квитанции
-      i,              //индекс команды в реестре
-      MSG_CMD_OK,     //сообщение квитанции
-      0,              //данные квитанции
-      TIME_SYS        //текущее системное время 
-      );  
-
-      SERV_ID_DEL (id,i);//удаляем команду из реестра
     }else
        if (id->CMD_TYPE[i]==CMD_TEST_JTAG)//команда начала теста проверки шины JTAG
     {
+      FLAG_CMD=1;
       Transf("начинаем тест проверку шины JTAG!\r\n");
       FLAG_ASQ_TEST_JTAG=0;//сбрасываем флаг ответа на тест 485
       FUNC_FLAG_UP (&POINTER_TEST_JTAG,10);//ставим отложенную задачу для опроса кассет на бекплейне, нельзя ставить 0 в задержку!!!
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
-
-      ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
-      id,             //указатель на реестр
-      &INVOICE[ADR],  //указатель на структуру квитанции
-      i,              //индекс команды в реестре
-      MSG_CMD_OK,     //сообщение квитанции
-      0,              //данные квитанции
-      TIME_SYS        //текущее системное время 
-      );  
-
-      SERV_ID_DEL (id,i);//удаляем команду из реестра
+    }else
+       if (id->CMD_TYPE[i]==CMD_Corr_I)//команда переустановки коэффициента коррекции тока
+    {
+      FLAG_CMD=1;
+      idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
+      idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
+      idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+      idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+      idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+    //----------------------------------------------------------------------------------  
+      data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+      index_ch=srv->MeM[idx0];//индекс канала для корректора
+      u_out("Принят коэффициент коррекции измерения тока:",data);
+      TMP_f=data;      
+      B330.Corr_I[index_ch]=TMP_f/1000;
+    }else
+       if (id->CMD_TYPE[i]==CMD_Corr_U)//команда переустановки коэффициента коррекции напряжения
+    {
+      FLAG_CMD=1;
+      idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
+      idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
+      idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+      idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+      idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+    //----------------------------------------------------------------------------------  
+      data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+      index_ch=srv->MeM[idx0];//индекс канала для корректора
+      u_out("Принят коэффициент коррекции измерения напряжения:",data);
+      TMP_f=data;      
+      B330.Corr_U[index_ch]=TMP_f/1000;
     }
 		
-	//	if (id->TIME<TIME_SYS)
+    //----------------------------------------------------------
+    //---------отсылаем квитанцию и очищаем буфер---------------
+    if (FLAG_CMD==1)
+    {
+      FLAG_CMD=0;
+	  //------------------------------
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
+			id,			        //указатель на реестр
+			&INVOICE[ADR],  //указатель на структуру квитанции
+			i, 			        //индекс команды в реестре
+			MSG_CMD_OK,	    //сообщение квитанции
+			0,				      //данные квитанции
+			TIME_SYS	      //текущее системное время 
+			);	
+			SERV_ID_DEL (id,i);//удаляем команду из реестра
+    //------------------------------
+    }
+
 	}
 }
 
@@ -4393,7 +4429,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_JTAG))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		    FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
         IO("~0 time;");
         Transf("Опрашиваем шину JTAG!\r\n");
         FLAG_ASQ_TEST_JTAG=0;
@@ -4458,6 +4494,41 @@ void FTIME_OF_WORK ()
 	}
 }
 
+u32 buf_to_data (u8 *p)
+{
+	u32 a=0;
+	a=(p[0]<<24)|(p[1]<<16)|(p[2]<<8)|(p[3]<<0);//старший байт в младшем адресе!!!
+	return a;
+}
+
+void SERIAL_NUMBER_WR (u32 data)
+{
+	u8 buf[256];
+  for (int i=0;i<256;i++) buf[i]=0;
+	u_out("Записываем серийный номер:",data);
+	buf[0]=(data>>24)&0xff;
+	buf[1]=(data>>16)&0xff;
+	buf[2]=(data>> 8)&0xff;
+	buf[3]=(data>> 0)&0xff;
+  while (spi_EPCS_STATUS()==1){};	//проверЯем что флеш не занЯта
+  spi_EPCS_wr_ENABLE(); //разрешаем запись во флеш
+  spi_EPCS_write(WRITE_BYTES,SERIAL_ADR_FLASH,buf,256);
+  spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+}
+
+//Считывает серийный номер из флешпамяти
+u64 SERIAL_NUMBER ()
+{
+   u8 buf[4];//{}
+   int adr=SERIAL_ADR_FLASH;
+   u64 data=0;
+
+   spi_EPCS_read(READ_BYTES,adr,buf,4);
+   data=buf_to_data(buf);
+   u_out("Серийный номер блока:",data);
+   return data;
+}
+
 int main(void)
 {
 	int i=0;
@@ -4490,7 +4561,7 @@ int main(void)
   MX_ADC1_Init();
 //MX_TIM4_Init();  НЕ НУЖЕН, В СХЕМЕ НЕТ БОЛЬШЕ ШИМа!!!
 //MX_SPI2_Init();
-//MX_SPI3_Init();
+  MX_SPI3_Init();
   MX_SPI4_Init();
   MX_SPI5_Init();
   MX_USART1_UART_Init();
@@ -4558,8 +4629,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
  }
  
  Set_network();
- RECEIVE_udp(0, 3001,1);
- 
+ RECEIVE_udp(0, 3001,1); 
  
  for (i=0;i<8;i++) ADR_SLAVE[i]=0xff;//очищаем массив с адресами слейвов (тут храним адреса для обмена по 485 шине)
 
@@ -4570,6 +4640,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 //-------------------------------------
   RESET_072(1);//снимаем ресет 072 кассет
 
+  B330.B330_NUMBER=SERIAL_NUMBER ();
   B330.PRG_VERSIYA=STM32_VERSION;
   B330.WORK_TIME=TIME_OF_WORK; //время наработки блока в десятках минут;
 
