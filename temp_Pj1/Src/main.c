@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -68,9 +69,9 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 
 /* USER CODE BEGIN PV */
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
-#define SYS_INTERVAL 500
+#define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x240520211751;//номер версии прошивки 12-02 время и 24-05-2021 дата
+u64 STM32_VERSION = 0x090620211046;//номер версии прошивки 12-02 время и 24-05-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -1528,36 +1529,36 @@ void info ()
 
 void BUS_485_TEST (u8 a)
 {
-   u8 Str[17];
+   u8 u[17];
    int n=0;
 
-   Str[n++]=' ';   //0
-   Str[n++]='~';   //1
-   Str[n++]=0x30+a;//2
-   Str[n++]=' ';   //3
-   Str[n++]='r';   //4
-   Str[n++]='s';   //5
-   Str[n++]='4';   //6
-   Str[n++]='8';   //7
-   Str[n++]='5';   //8
-   Str[n++]='_';   //9
-   Str[n++]='t';   //10
-   Str[n++]='e';   //11
-   Str[n++]='s';   //12
-   Str[n++]='t';   //13
-   Str[n++]=';';   //14
-   Str[n++]=';';   //15
-   Str[n++]=0x00;  //16
+   u[n++]=' ';   //0
+   u[n++]='~';   //1
+   u[n++]=0x30+a;//2
+   u[n++]=' ';   //3
+   u[n++]='r';   //4
+   u[n++]='s';   //5
+   u[n++]='4';   //6
+   u[n++]='8';   //7
+   u[n++]='5';   //8
+   u[n++]='_';   //9
+   u[n++]='t';   //10
+   u[n++]='e';   //11
+   u[n++]='s';   //12
+   u[n++]='t';   //13
+   u[n++]=';';   //14
+   u[n++]=';';   //15
+   u[n++]=0x00;  //16
 
-   Transf2(Str);
+   Transf2(u);
    Transf("Послан код: ");
-   Transf(Str);
+   Transf(u);
    Transf("\r\n");
 }
 
 u32 crc_input=0u; 
 u32 crc_comp=0u;
-u8 Str[10];
+u8 Str[64];
 
 u32 IO ( char* str)      // функция обработки протокола обмена
 {
@@ -2730,7 +2731,7 @@ int LM_v (u8 z)
 	x=(1/m)*(y*(powf(10,r))-b);
 	
 //	f_out("U=",x);
-	x=okrug(x,1);
+//	x=okrug(x,2);
   value=x*100;
 	
 	if (error==1) value=0xffffffff;
@@ -2785,7 +2786,7 @@ int LM_aux_u (u8 z)
 	
 //	f_out("U=",x);
 	
-	 x=okrug(x,1);
+//	 x=okrug(x,2);
   value=x*100;
 	
 	if (error==1) value=0xffffffff;
@@ -2840,7 +2841,7 @@ int LM_in_i (u8 z)
 	x=(1/m)*((y*(powf(10,r)))-b)/1.1;//с поправочным коэффициентом
 //	f_out("I=",x);
 	
-	 x=okrug(x,1);
+	// x=okrug(x,2);
   value=x*100;
 	
 	if (error==1) value=0xffffffff;
@@ -2895,7 +2896,7 @@ int LM_in_p (u8 z)
 	
 //	f_out("P=",x);
 	
-	 x=okrug(x,1);
+	 x=okrug(x,2);
   value=x*100;
 
 	if (error==1) value=0xffffffff;
@@ -2928,14 +2929,6 @@ u32 k //смещение данных в байтах от их начального положения
 void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
 {
   u32 i=0;
-  u32 idx0=0;
-  u32 idx1=0;
-  u32 idx2=0;
-  u32 idx3=0;
-  u32 idx4=0;
-  u32 idx5=0;
-  u32 idx6=0;
-  u32 idx7=0;
   
   u64 ADR=ADRES_SENDER_CMD;
   u32 data=0;
@@ -3913,10 +3906,49 @@ void CONTROL_POK (void)
 	}
 }
 
+//--------------------
+int comp (const int *, const int *);
+/* сравнение двух целых */
+int comp (const int *i, const int *j)
+{
+  return *i - *j;
+}
+//--------------------
+
+int FILTR (int data,int *p,u8 n)
+{
+  int z=0;
+  int tmp[32];
+  int i=0;
+  int k=n/2;
+
+  for (i=0;i<(n-1);i++) p[n-i-1]=p[n-i-2];
+  p[0]=data;
+  for (i=0;i<n;i++) tmp[i]=p[i];
+
+  qsort(tmp, n, sizeof (int), (int(*) (const void *, const void *)) comp);//сортируем временный массив
+  z=tmp[k];
+
+  return z;
+}
+
+int cnvrt (int i,int u)
+{
+  int z=0;
+  float x0,x1,y;
+  x0=i;
+  x1=u;
+  x0=x0/100;
+  x1=x1/100;
+  y=x0*x1;
+  z=y*100;
+  return z;
+}
+
 void CONTROL_SYS (void)
 {
 	static u8 flag=0;
-	u32 tmp0=0; 
+	u32 tmp0=0;   
 	
   if ((START_BP==1)&&(TIMER_CONTROL_SYS>SYS_INTERVAL))
   {
@@ -3951,27 +3983,16 @@ void CONTROL_SYS (void)
     if (LM8.TEMP>tmp0) tmp0=LM8.TEMP;
 
     B330.TEMP_MAX=tmp0;tmp0=0;//4-ре значащих разряда
-    //Измерение потребляемой мощности
-    LM1.P=LM_in_p(1);
-    LM2.P=LM_in_p(2);
-    LM3.P=LM_in_p(3);
-    LM4.P=LM_in_p(4);
-    LM5.P=LM_in_p(5);
-    LM6.P=LM_in_p(6);
-    LM7.P=LM_in_p(7);
-    LM8.P=LM_in_p(8);
-
-    B330.P = LM1.P+LM2.P+LM3.P+LM4.P+LM5.P+LM6.P+LM7.P+LM8.P;//4-ре значащих разряда
-  //B330.P = 1000;
+    //B330.P = 1000;
     //Измерение потребляемого тока
-    LM1.I=LM_in_i(1);
-    LM2.I=LM_in_i(2);
-    LM3.I=LM_in_i(3);
-    LM4.I=LM_in_i(4);
-    LM5.I=LM_in_i(5);
-    LM6.I=LM_in_i(6);
-    LM7.I=LM_in_i(7);
-    LM8.I=LM_in_i(8);
+    LM1.I=FILTR (LM_in_i(1),LM1.FI,12);
+    LM2.I=FILTR (LM_in_i(2),LM2.FI,12);
+    LM3.I=FILTR (LM_in_i(3),LM3.FI,12);
+    LM4.I=FILTR (LM_in_i(4),LM4.FI,12);
+    LM5.I=FILTR (LM_in_i(5),LM5.FI,12);
+    LM6.I=FILTR (LM_in_i(6),LM6.FI,12);
+    LM7.I=FILTR (LM_in_i(7),LM7.FI,12);
+    LM8.I=FILTR (LM_in_i(8),LM8.FI,12);
 
     if (LM1.I>tmp0) tmp0=LM1.I;
     if (LM2.I>tmp0) tmp0=LM2.I;
@@ -3985,14 +4006,26 @@ void CONTROL_SYS (void)
     B330.I = tmp0;tmp0=0;//3-три значащих разряда
 //    B330.I = 1000;
     //Измерение напряжения в каналах
-    LM1.U=LM_v(1);
-    LM2.U=LM_v(2);
-    LM3.U=LM_v(3);
-    LM4.U=LM_v(4);
-    LM5.U=LM_v(5);
-    LM6.U=LM_v(6);
-    LM7.U=LM_v(7);
-    LM8.U=LM_v(8);
+    LM1.U=FILTR (LM_v(1),LM1.FU,12);
+    LM2.U=FILTR (LM_v(2),LM2.FU,12);
+    LM3.U=FILTR (LM_v(3),LM3.FU,12);
+    LM4.U=FILTR (LM_v(4),LM4.FU,12);
+    LM5.U=FILTR (LM_v(5),LM5.FU,12);
+    LM6.U=FILTR (LM_v(6),LM6.FU,12);
+    LM7.U=FILTR (LM_v(7),LM7.FU,12);
+    LM8.U=FILTR (LM_v(8),LM8.FU,12);
+
+        //Измерение потребляемой мощности
+    LM1.P=FILTR (cnvrt (LM1.I,LM1.U),LM1.FP,12);
+    LM2.P=FILTR (cnvrt (LM2.I,LM2.U),LM2.FP,12);
+    LM3.P=FILTR (cnvrt (LM3.I,LM3.U),LM3.FP,12);
+    LM4.P=FILTR (cnvrt (LM4.I,LM4.U),LM4.FP,12);
+    LM5.P=FILTR (cnvrt (LM5.I,LM5.U),LM5.FP,12);
+    LM6.P=FILTR (cnvrt (LM6.I,LM6.U),LM6.FP,12);
+    LM7.P=FILTR (cnvrt (LM7.I,LM7.U),LM7.FP,12);
+    LM8.P=FILTR (cnvrt (LM8.I,LM8.U),LM8.FP,12);
+
+    B330.P = LM1.P+LM2.P+LM3.P+LM4.P+LM5.P+LM6.P+LM7.P+LM8.P;//4-ре значащих разряда
 
     if (LM1.U>tmp0) tmp0=LM1.U;
     if (LM2.U>tmp0) tmp0=LM2.U;
@@ -4009,7 +4042,7 @@ void CONTROL_SYS (void)
     if (LM1.U<tmp0) tmp0=LM1.U;
     if (LM2.U<tmp0) tmp0=LM2.U;
     if (LM3.U<tmp0) tmp0=LM3.U;
-    if (LM4.U>tmp0) tmp0=LM4.U;
+    if (LM4.U<tmp0) tmp0=LM4.U;
     if (LM5.U<tmp0) tmp0=LM5.U;
     if (LM6.U<tmp0) tmp0=LM6.U;
     if (LM7.U<tmp0) tmp0=LM7.U;
@@ -4022,7 +4055,7 @@ void CONTROL_SYS (void)
 	  if ((START_BP==0)&&(flag==1))
   {
 	flag=0;
-	LM1.TEMP=0xffffffff;
+  	LM1.TEMP=0xffffffff;
     LM2.TEMP=0xffffffff;
     LM3.TEMP=0xffffffff;
     LM4.TEMP=0xffffffff;
@@ -4031,7 +4064,7 @@ void CONTROL_SYS (void)
     LM7.TEMP=0xffffffff;
     LM8.TEMP=0xffffffff;
 	
-	LM1.U=0;
+  	LM1.U=0;
     LM2.U=0;
     LM3.U=0;
     LM4.U=0;
@@ -4040,7 +4073,7 @@ void CONTROL_SYS (void)
     LM7.U=0;
     LM8.U=0;
 	
-	LM1.I=0;
+	  LM1.I=0;
     LM2.I=0;
     LM3.I=0;
     LM4.I=0;
@@ -4049,7 +4082,7 @@ void CONTROL_SYS (void)
     LM7.I=0;
     LM8.I=0;
 	
-	LM1.P=0;
+  	LM1.P=0;
     LM2.P=0;
     LM3.P=0;
     LM4.P=0;
@@ -4203,7 +4236,7 @@ void SLAVE_COUNT ()
 }
 
 //посылаем запрос на бекплейн про адреса блоков 072
-void req_col ()
+void req_col (void)
 {
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
   NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
