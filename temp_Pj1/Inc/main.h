@@ -280,13 +280,10 @@ typedef unsigned long uint32;
 
 #define CS_EPCS1(a)   ((a==1)?PD0_1 : PD0_0)
 #define CS_EPCS2(a)   ((a==1)?PD1_1 : PD1_0)
-
 #define DE_RS485(a)   ((a==1)?PD4_1 : PD4_0)
 #define NRE_RS485(a)    ((a==1)?PD7_1 : PD7_0)
-
 #define WDI_MK(a)     ((a==1)?PB9_1 : PB9_0)
 #define RES_4(a)      ((a==1)?PE0_1 : PE0_0)
-
 #define NSS_4(a)        ((a==1)?PE4_1 : PE4_0)
 
 //------------------------------------------------
@@ -310,8 +307,8 @@ typedef unsigned long uint32;
 #define WRITE_DISABLE	0x4
 #define READ_STATUS		0x5
 #define READ_BYTES		0x3    
-#define READ_ID			0xab	  
-#define FAST_READ		0x0b    
+#define READ_ID		  	0xab	  
+#define FAST_READ		  0x0b    
 #define WRITE_STATUS	0x01
 #define WRITE_BYTES		0x02	 
 #define ERASE_BULK		0xc7
@@ -332,18 +329,20 @@ typedef unsigned long uint32;
 
 // USART1 Receiver buffer
 #define RX_BUFFER_SIZE1 64u
-#define Bufer_size   8192u   //16384
+#define Bufer_size    8192u   //16384
 
 // USART2 Receiver buffer
 #define RX_BUFFER_SIZE2 64u
 #define Bufer_size2   1024u   //16384
 
-#define buf_IO   32u 
-#define buf_Word 32u 
+#define buf_IO        32u 
+#define buf_Word      32u 
 #define buf_DATA_Word 200u 
-#define BUFFER_SR 200u
-#define BUF_STR 64
-#define MAX_PL 157u
+#define BUFFER_SR     200u
+#define BUF_STR       64
+#define MAX_PL        157u
+
+#define BUF_DATA_SZ   128
 
 //------------------------------------------------
 
@@ -416,6 +415,7 @@ typedef unsigned long uint32;
 #define MSG_REQ_TEST_485  151 //сообщаем  результат теста проверки шины 485
 #define MSG_REQ_TEST_SPI  152 //сообщаем  результат теста проверки шины SPI
 #define MSG_REQ_TEST_JTAG 153 //сообщаем  результат теста проверки шины JTAG
+#define MSG_Corr_REQ      154 
 
 //---------команды управления---------------------------------------------
 #define CMD_TIME_SETUP       1   //команда установки точного времени, реалтайм.
@@ -437,24 +437,24 @@ typedef unsigned long uint32;
 #define CMD_TEST_JTAG       13   //команда начала теста проверки шины JTAG
 #define CMD_Corr_I          201  //команда установки нового коэффициента коррекции измерения тока
 #define CMD_Corr_U          202  //команда установки нового коэффициента коррекции измерения напряжения
-//------------------------------------------------------------------------
- 
-#define SIZE_SERVER   4096//размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
-#define SIZE_ID        32 //размер реестра  
-#define quantity_CMD   64 //максимальное количество команд и количества квитанций!!!
-#define quantity_DATA  64 //максимальная длинна данных
-#define quantity_SENDER 2 //максимальное количество адресатов
+#define CMD_Corr_REQ        203  //команда запроса списка корректирующих коэффициентов
+//------------------------------------------------------------------------ 
+#define SIZE_SERVER  16384  //размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
+#define SIZE_ID        64   //размер реестра  
+#define quantity_CMD   64   //максимальное количество команд и количества квитанций!!!
+#define quantity_DATA  128  //максимальная длинна данных
+#define quantity_SENDER 2   //максимальное количество адресатов
 //-----------------------------------------------------------------
 //тут указываем адрес во флеш где храним наработку блока (с какого адреса)
-#define ADR_TIME_OF_WORK 1  
+#define ADR_TIME_OF_WORK 0x100  
 //тут указываем число страниц на которых храним нароботку блока
 #define N_PAGE_TIME_OF_WORK 20  
 //тут указываем адрес серийного номера во флеш
-#define SERIAL_ADR_FLASH 0  
+#define SERIAL_ADR_FLASH 0x00  
 //тут указываем адрес коэффициента коррекции тока
-#define CorrI_ADR_FLASH 50
+#define CorrI_ADR_FLASH 0x200
 //тут указываем адрес коэффициента коррекции напряжения
-#define CorrU_ADR_FLASH 60
+#define CorrU_ADR_FLASH 0x300
 
 typedef struct    //структура параметров LM
 {
@@ -626,12 +626,27 @@ void req_col (void);
 void FUNC_FLAG_UP (POINTER *,u32);
 u8 FLAG_DWN (POINTER *);
 void SPI_BP_WRITE (u32 ,u32 );
-void spi_EPCS_rd (u8 cmd,u8 d[],u32 n);
+void spi_EPCS1_rd (u8 cmd,u8 d[],u32 n);
 void SERIAL_NUMBER_WR (u32 );
+void spi_EPCS2_rd (u8 cmd,u8 d[],u32 n);
+void TABL_CONS (u8 *p,u32 n);
+void EPCS1_WRITE_BUF(u32 adr,u8 *p,u32 n);
+void EPCS2_WRITE_BUF(u32 adr,u8 *p,u32 n);
+void EPCS1_ERASE_SECTOR(u32 adr);
+void EPCS2_ERASE_SECTOR(u32 adr);
+void EPCS1_ERASE_ALL(void);
+void EPCS2_ERASE_ALL(void);
+void CorrI_read (void);
+void CorrU_read (void);
+void CorrI_write(void); 
+void CorrU_write(void); 
+void Console_corr(void);
+void TIME_cons (void);
+void DAT_CORR_REQ_FORM (void);
 //-------------JTAG--------------
 void JTAG_SCAN (void);
-u8 SCAN_N (void);
-void ID_recive (u8 );
+  u8 SCAN_N    (void);
+void ID_recive (u8  );
 //-------------------------------
 
 

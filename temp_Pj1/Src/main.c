@@ -269,6 +269,7 @@ u8 SCH_TST3=0;
 int index_ch;
 float TMP_f=0;
 u8 FLAG_CMD=0;
+u8 DAT_REQ[BUF_DATA_SZ];//транспортный массив
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -1436,31 +1437,53 @@ u32 FPGA_wSPI (u8 size,u8 adr,u64 data)
 
    return 0;
 }  
+
+//-----------------------------------------------------------------
+void TIME_cons (void)
+{
+  un64_out("[",TIME_SYS);Transf("]\r\n");
+}
 //-----------------------------------------------------------------
 //  EPCS128 flash
 
-u8 spi_EPCS_STATUS (void)			//счтывает статусный байт во флеш , нулевой бит - бит записи, его проверЯем
+u8 spi_EPCS1_STATUS (void)			//счтывает статусный байт во флеш , нулевой бит - бит записи, его проверЯем
 {
 	u8 m[1];
-	spi_EPCS_rd(READ_STATUS,m,1);
+	spi_EPCS1_rd(READ_STATUS,m,1);
 	return m[0];
 }
 
-void spi_EPCS_rd (u8 cmd,u8 d[],u32 n) //чтение данных
+u8 spi_EPCS2_STATUS (void)			//счтывает статусный байт во флеш , нулевой бит - бит записи, его проверЯем
+{
+	u8 m[1];
+	spi_EPCS2_rd(READ_STATUS,m,1);
+	return m[0];
+}
+void spi_EPCS1_rd (u8 cmd,u8 d[],u32 n) //чтение данных
 {  
    u32 i=0;
    CS_EPCS1(0);
-   CS_EPCS2(0);
    spisend8(cmd);//
    for (i=0;i<n;i++)  
    {
 	   d[i]=spisend8(0);  
    }
    CS_EPCS1(1);
+}
+
+void spi_EPCS2_rd (u8 cmd,u8 d[],u32 n) //чтение данных
+{  
+   u32 i=0;
+   CS_EPCS2(0);
+   spisend8(cmd);//
+   for (i=0;i<n;i++)  
+   {
+	   d[i]=spisend8(0);  
+   }
    CS_EPCS2(1);
 }
 
-void spi_EPCS_read (u8 cmd,u32 adr,u8 d[],u32 n) //чтение данных
+void spi_EPCS1_read (u8 cmd,u32 adr,u8 d[],u32 n) //чтение данных
 {  
    u32 i=0;
    CS_EPCS1(0);
@@ -1476,7 +1499,23 @@ void spi_EPCS_read (u8 cmd,u32 adr,u8 d[],u32 n) //чтение данных
    CS_EPCS1(1);
 }
 
-void spi_EPCS_write (u8 cmd,u32 adr,u8 d[],u32 n) //запись данных в один сектор - 256 байт!!!
+void spi_EPCS2_read (u8 cmd,u32 adr,u8 d[],u32 n) //чтение данных
+{  
+   u32 i=0;
+   CS_EPCS2(0);
+   spisend8(cmd);//
+   spisend8((adr>>16)&0xff);//
+   spisend8((adr>> 8)&0xff);//
+   spisend8( adr     &0xff);//
+   for (i=0;i<n;i++)  
+   {
+	   Transf(".");
+	   d[i]=spisend8(0);  
+   }
+   CS_EPCS2(1);
+}
+
+void spi_EPCS1_write (u8 cmd,u32 adr,u8 d[],u32 n) //запись данных в один сектор - 256 байт!!!
 {  
    u32 i=0;
    CS_EPCS1(0);  
@@ -1493,26 +1532,82 @@ void spi_EPCS_write (u8 cmd,u32 adr,u8 d[],u32 n) //запись данных в один сектор 
    CS_EPCS1(1);
   Transf("\r\n");
 }
-void spi_EPCS_ERASE_BULK (void) //разрешение записи во флеш
+
+void spi_EPCS2_write (u8 cmd,u32 adr,u8 d[],u32 n) //запись данных в один сектор - 256 байт!!!
+{  
+   u32 i=0;
+   CS_EPCS2(0);  
+   spisend8(cmd);//
+   spisend8((adr>>16)&0xff);//
+   spisend8((adr>> 8)&0xff);//
+   spisend8( adr     &0xff);//
+   
+   for (i=0;i<n;i++)  
+   {
+	   Transf(".");
+	   spisend8(d[i]);  
+   }
+   CS_EPCS2(1);
+  Transf("\r\n");
+}
+
+void spi_EPCS1_ERASE_BULK (void) //разрешение записи во флеш
 {  
    CS_EPCS1(0);  
    spisend8(ERASE_BULK);//
    CS_EPCS1(1);
 }
 
-void spi_EPCS_wr_ENABLE (void) //разрешение записи во флеш
+void spi_EPCS2_ERASE_BULK (void) //разрешение записи во флеш
+{  
+   CS_EPCS2(0);  
+   spisend8(ERASE_BULK);//
+   CS_EPCS2(1);
+}
+
+void spi_EPCS1_wr_ENABLE (void) //разрешение записи во флеш
 {  
    CS_EPCS1(0);  
    spisend8(WRITE_ENABLE);//
    CS_EPCS1(1);
 }
 
-void spi_EPCS_wr_DISABLE (void) //разрешение записи во флеш
+void spi_EPCS2_wr_ENABLE (void) //разрешение записи во флеш
+{  
+   CS_EPCS2(0);  
+   spisend8(WRITE_ENABLE);//
+   CS_EPCS2(1);
+}
+
+void spi_EPCS1_wr_DISABLE (void) //разрешение записи во флеш
 {  
    CS_EPCS1(0);  
    spisend8(WRITE_DISABLE);//
    CS_EPCS1(1);
 }
+
+void spi_EPCS2_wr_DISABLE (void) //разрешение записи во флеш
+{  
+   CS_EPCS2(0);  
+   spisend8(WRITE_DISABLE);//
+   CS_EPCS2(1);
+}
+
+//-----------------------------------------------------------------
+ void Console_corr(void)
+ {
+   int i=0;
+    Transf("\r\n-------\r\n");
+   for (i=0;i<8;i++)
+   {
+     un_out("KI[",i); f_out("]=",B330.Corr_I[i]);
+   }
+    Transf("\r\n-------\r\n");
+   for (i=0;i<8;i++)
+   {
+     un_out("KU[",i); f_out("]=",B330.Corr_U[i]);
+   }
+ }  
 //-----------------------------------------------------------------
 //             тестовый вывод "Хранилища"
 void PRINT_SERV (void)
@@ -1605,18 +1700,15 @@ void BUS_485_TEST (u8 a)
 u32 crc_input=0u; 
 u32 crc_comp=0u;
 u8 Str[64];
-u8 bufer[32];
 u8 mas[300];
 
 u32 IO ( char* str)      // функция обработки протокола обмена
 {
-
  unsigned int i=0;
 	uint8_t z1=0;
   i = lenght;//длинна принятой пачки
   if (lenght==0) i = leng(str);
-  lenght = 0;
- 
+  lenght = 0; 
   indexZ = 0;
   
   if ((time_uart>50u)||(SCH_LENGHT_PACKET>MAX_PL))
@@ -1788,43 +1880,30 @@ if (strcmp(Word,"rs485_test")==0) // проверяем шину 485! Должен прийти ответ.
  if (strcmp(Word,"spi_read")==0) //
    {	
     crc_comp=atoi(DATA_Word);//тут адресс кассеты на бекплейне
-	crc_comp=(crc_comp<<4)|0x3;
-	crc_comp=FPGA_rSPI (32,crc_comp);
-	x_out("CODE FPGA:",crc_comp);
+	  crc_comp=(crc_comp<<4)|0x3;
+	  crc_comp=FPGA_rSPI (32,crc_comp);
+	  x_out("CODE FPGA:",crc_comp);
    } else	
  if (strcmp(Word,"spi_rd_tst")==0) //
    {	
     crc_comp=atoi(DATA_Word);//тут адресс кассеты на бекплейне
-	crc_comp=(crc_comp<<4)|0x1;
-	crc_comp=FPGA_rSPI (32,crc_comp);
-	x_out("CODE FPGA:",crc_comp);
+	  crc_comp=(crc_comp<<4)|0x1;
+	  crc_comp=FPGA_rSPI (32,crc_comp);
+	  x_out("CODE FPGA:",crc_comp);
    } else
 if (strcmp(Word,"JTAG_TST")==0)                     
    {
 	 crc_comp =atoi(DATA_Word);
      Transf ("принял JTAG_TST\r"    );
      Transf("\r"); 
-	 TST ();
+	   TST ();
    } else	
 if (strcmp(Word,"JTAG2_SCAN")==0)                     
    {
 	 crc_comp =atoi(DATA_Word);
      Transf ("принял JTAG_SCAN\r"    );
      Transf("\r"); 
-	 //--------------------
-	 /*
-		 u8 list[2]; //массив длин IR регистров - их число должно быть по числу устройств на шине 
-			list[0]=10;
-			list[1]=10;
-			list[2]=10;
-			list[3]=10;
-			list[4]=10;
-			list[5]=10;
-			list[6]=10;
-			list[7]=10;
-			list[1]=0;*/
-//	 crc_comp=jtag_scan(list,crc_comp); 
-	 crc_comp=jtag_scan(NULL,crc_comp); 
+	   crc_comp=jtag_scan(NULL,crc_comp); 
    } else
 if (strcmp(Word,"JTAG1_SCAN")==0)                     
    {
@@ -1848,13 +1927,7 @@ if (strcmp(Word,"BatPG")==0) //
    } else		
 if (strcmp(Word,"time")==0) //
    {
-	  crc_comp =atoi  (DATA_Word); 
-//    u_out ("принял time:",crc_comp); 
-//	  u_out("TIME_SYS:",TIME_SYS);
-    un64_out("[",TIME_SYS);Transf("]\r\n");
-//	  u_out("TIMER1  :",TIMER1);
-//	  u_out("TIME_TEST:",TIME_TEST);
-	  
+     TIME_cons ();
    } else	
 	
 if (strcmp(Word,"mem")==0) //
@@ -1925,14 +1998,6 @@ if (strcmp(Word,"MSG")==0) //
 	  crc_input =atoi  (DATA_Word); 
       u_out ("принял lm:",crc_input); 
       LM_MFR_MODEL(crc_input); //если есть ответ i2c - будет выводить данные!!!
-	  /*
-	  crc_comp=LM_in_p (crc_input);
-	  u_out("p=",crc_comp);
-	  crc_comp=LM_in_i (crc_input);
-	  u_out("i=",crc_comp);
-	  crc_comp=LM_aux_u(crc_input);
-	  u_out("u=",crc_comp);
-	  */
    } else
 if (strcmp(Word,"sys_info")==0) //
    {
@@ -2057,97 +2122,137 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
     u_out ("принял MSG_ADR:",crc_comp); 
     FUNC_FLAG_UP (&POINTER_ADR_COLLECT,100);//ставим отложенную задачу для опроса кассет на бекплейне
    } else
-      if (strcmp(Word,"EPCS_DEV_ID")==0) //only for EPCS128 !!!
+      if (strcmp(Word,"EPCS1_DEV_ID")==0) //only for EPCS128 !!!
         {
-          Transf ("\r\nпринял EPCS_DEV_ID:\r\n");
-          spi_EPCS_rd(READ_DEV_ID,mas,3);
+          Transf ("\r\nпринял EPCS1_DEV_ID:\r\n");
+          spi_EPCS1_rd(READ_DEV_ID,mas,3);
+          Transf ("\r\n");
+          if (mas[2]==0x18) Transf("recive: EPCS128\r\n");
+          x_out("mas[2]:",mas[2]);
+        } else       
+      if (strcmp(Word,"EPCS2_DEV_ID")==0) //only for EPCS128 !!!
+        {
+          Transf ("\r\nпринял EPCS2_DEV_ID:\r\n");
+          spi_EPCS2_rd(READ_DEV_ID,mas,3);
           Transf ("\r\n");
           if (mas[2]==0x18) Transf("recive: EPCS128\r\n");
           x_out("mas[2]:",mas[2]);
         } else
-      if (strcmp(Word,"EPCS_ID")==0) //
+      if (strcmp(Word,"EPCS1_ID")==0) //
         {
           Transf ("\r\nпринял EPCS_ID:\r\n");
-          spi_EPCS_rd(0x20,mas,3);
+          spi_EPCS1_rd(0x20,mas,3);
           Transf ("\r\n");
           x_out("mas[0]:",mas[0]);
           x_out("mas[1]:",mas[1]);
           x_out("mas[2]:",mas[2]);
           }  else
-      if (strcmp(Word,"EPCS_STATUS")==0) //
+      if (strcmp(Word,"EPCS1_STATUS")==0) //
         {
           crc_comp =atoi(DATA_Word);
           crc_input=atoi(DATA_Word2);
-          Transf ("\r\nпринял EPCS_STATUS:\r\n");
-          spi_EPCS_rd(READ_STATUS,mas,4);
+          Transf ("\r\nпринял EPCS1_STATUS:\r\n");
+          spi_EPCS1_rd(READ_STATUS,mas,4);
           Transf ("\r\n");
           x_out("mas[0]:",mas[0]);
           x_out("mas[1]:",mas[1]);
           x_out("mas[2]:",mas[2]);
           x_out("mas[3]:",mas[3]);
           }  else
-        if (strcmp(Word,"EPCS_READ")==0) //
+     if (strcmp(Word,"EPCS2_STATUS")==0) //
+        {
+          crc_comp =atoi(DATA_Word);
+          crc_input=atoi(DATA_Word2);
+          Transf ("\r\nпринял EPCS2_STATUS:\r\n");
+          spi_EPCS2_rd(READ_STATUS,mas,4);
+          Transf ("\r\n");
+          x_out("mas[0]:",mas[0]);
+          x_out("mas[1]:",mas[1]);
+          x_out("mas[2]:",mas[2]);
+          x_out("mas[3]:",mas[3]);
+          }  else
+        if (strcmp(Word,"EPCS1_READ")==0) //
           {
-            crc_comp =atoi(DATA_Word);
-            crc_input=atoi(DATA_Word2);
-            x_out ("\r\nпринял EPCS_READ:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
-            
-            spi_EPCS_read(READ_BYTES,crc_comp,mas,256);//чтение 256 байт данных
+            crc_comp =atoi(DATA_Word); //адрес чтения
+            crc_input=atoi(DATA_Word2);//количество байт
+            x_out ("\r\nпринял EPCS1_READ:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ            
+            spi_EPCS1_read(READ_BYTES,crc_comp,mas,crc_input);//чтение 256 байт данных
             Transf("\r\n---------------------------\r\n");
-            for (i=0;i<256;i++)
-            {
-              hn_out (mas[i+0],0);hn_out (mas[i+1],0);hn_out (mas[i+2],0);hn_out (mas[i+3],0);
-              i=i+3;
-              Transf("\r\n");	
-            }	
-    }else
-    if (strcmp(Word,"EPCS_WRITE_TEST")==0) //
+            TABL_CONS (mas,crc_input);
+          }
+            else
+        if (strcmp(Word,"EPCS2_READ")==0) //
+          {
+            crc_comp =atoi(DATA_Word); //адрес чтения
+            crc_input=atoi(DATA_Word2);//количество байт
+            x_out ("\r\nпринял EPCS2_READ:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ            
+            spi_EPCS2_read(READ_BYTES,crc_comp,mas,crc_input);//чтение 256 байт данных
+            Transf("\r\n---------------------------\r\n");
+            TABL_CONS (mas,crc_input);
+          }
+    else
+    if (strcmp(Word,"EPCS1_WRITE_TEST")==0) //
       {
         crc_comp =atoi(DATA_Word);
         crc_input=atoi(DATA_Word2);
-        x_out ("\r\nпринял EPCS_WRITE_TEST:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
-        Transf("\r\n---------------------------\r\n");
-        
-        for (i=0;i<256;i++) mas[i]=i;
-          
-        spi_EPCS_wr_ENABLE(); //разрешаем запись во флеш
-        spi_EPCS_write(WRITE_BYTES,crc_comp,mas,256);
-        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+        x_out ("\r\nпринял EPCS1_WRITE_TEST:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+        Transf("\r\n---------------------------\r\n");        
+        for (i=0;i<256;i++) mas[i]=crc_input;          
+        EPCS1_WRITE_BUF(crc_comp,mas,256);
         }else
-    if (strcmp(Word,"EPCS_ERASE_SECTOR")==0) //
+    if (strcmp(Word,"EPCS2_WRITE_TEST")==0) //
       {
         crc_comp =atoi(DATA_Word);
-        x_out ("\r\nпринял EPCS_ERASE_SECTOR:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
-
-        spi_EPCS_wr_ENABLE();//разрешаем запись во флеш
-        spi_EPCS_write(ERASE_SECTOR,crc_comp,mas,0);
-        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+        crc_input=atoi(DATA_Word2);
+        x_out ("\r\nпринял EPCS2_WRITE_TEST:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+        Transf("\r\n---------------------------\r\n");        
+        for (i=0;i<256;i++) mas[i]=crc_input;          
+        EPCS2_WRITE_BUF(crc_comp,mas,256);
+        }else
+    if (strcmp(Word,"EPCS1_ERASE_SECTOR")==0) //
+      {
+        crc_comp =atoi(DATA_Word);
+        x_out ("\r\nпринял EPCS1_ERASE_SECTOR:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+        EPCS1_ERASE_SECTOR(crc_comp);
         }else 
-    if (strcmp(Word,"EPCS_ERASE_ALL")==0) //
+    if (strcmp(Word,"EPCS2_ERASE_SECTOR")==0) //
+      {
+        crc_comp =atoi(DATA_Word);
+        x_out ("\r\nпринял EPCS2_ERASE_SECTOR:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
+        EPCS2_ERASE_SECTOR(crc_comp);
+        }else 
+    if (strcmp(Word,"EPCS1_ERASE_ALL")==0) //
       {
         crc_comp =atoi(DATA_Word);
         x_out ("\r\nпринял EPCS_ERASE_ALL:",crc_comp);//crc_comp - тут 24-х битный адрес чтениЯ
-
-        spi_EPCS_wr_ENABLE ();//разрешаем запись во флеш
-        spi_EPCS_ERASE_BULK();//стираем всЮ во флеш
-        spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
-        } else
-      if (strcmp(Word,"serial_w")==0) //
+        EPCS1_ERASE_ALL();
+        } else 
+    if (strcmp(Word,"serial_w")==0) //
         {
           crc_comp =atoi(DATA_Word);
           u_out ("принял serial_w:",crc_comp);  
           SERIAL_NUMBER_WR (crc_comp);                  
+        } else
+    if (strcmp(Word,"corr")==0) //
+        {
+          crc_comp =atoi(DATA_Word);
+          u_out ("принял corr:",crc_comp);  
+          Console_corr();                  
+        }  else
+    if (strcmp(Word,"corr_I_write")==0) //
+        {
+          crc_comp =atoi(DATA_Word);
+          u_out ("принял corr_I_write:",crc_comp);  
+          CorrI_write ();                
         } 
  } 
-	    for (i=0u;i<buf_Word;i++)               Word[i]     =0x0;
-      for (i=0u;i<buf_DATA_Word;  i++)   DATA_Word[i]     =0x0;
-      for (i=0u;i<buf_DATA_Word;  i++)  DATA_Word2[i]     =0x0;  
-      for (i=0u;i<BUFFER_SR;i++)  
-      {
-        InOut[i]     =0x0;
-      }  
+      for (i=0u;i<(BUFFER_SR+1);i++)         str[i]=0x00;
+	    for (i=0u;i<buf_Word     ;i++)        Word[i]=0x00;
+      for (i=0u;i<buf_DATA_Word;i++)   DATA_Word[i]=0x00;
+      for (i=0u;i<buf_DATA_Word;i++)  DATA_Word2[i]=0x00;  
+      for (i=0u;i<BUFFER_SR    ;i++)       InOut[i]=0x00;  
       
-	  time_uart=0;  //обнуление счётчика тайм аута
+	      time_uart=0;  //обнуление счётчика тайм аута
       packet_flag=0; 
       index1=0u; 
       crc_ok=0; 
@@ -3052,6 +3157,33 @@ u32 k //смещение данных в байтах от их начального положения
  return idx;
 }
 
+void DAT_CORR_REQ_FORM (void)
+{
+  u32 tmp=0;
+  u32 i=0;
+  u32 j=0;
+
+  for (i=0;i<8;i++)
+  {
+    tmp=B330.Corr_I[i]*1000;
+    DAT_REQ[j+0]=(tmp>>24)&0xff;
+    DAT_REQ[j+1]=(tmp>>16)&0xff;
+    DAT_REQ[j+2]=(tmp>> 8)&0xff;
+    DAT_REQ[j+3]=(tmp>> 0)&0xff;
+    j=j+4;
+  }
+
+  for (i=0;i<8;i++)
+  {
+    tmp=B330.Corr_U[i]*1000;
+    DAT_REQ[j+0]=(tmp>>24)&0xff;
+    DAT_REQ[j+1]=(tmp>>16)&0xff;
+    DAT_REQ[j+2]=(tmp>> 8)&0xff;
+    DAT_REQ[j+3]=(tmp>> 0)&0xff;
+    j=j+4;
+  }
+  
+}
 
 //функция отслыает ...
 void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
@@ -3092,7 +3224,9 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
 u8 DATA_TR [COL];
 
 void ARR_Z ()
-{u8 n=0;
+{
+  u8 n=0;
+  u32 tmp0=0;
   
   DATA_TR[n++]=B330.INIT;			//0
   DATA_TR[n++]=B330.TEMP_MAX>>8;	//1	
@@ -3136,8 +3270,7 @@ void ARR_Z ()
   DATA_TR[n++]=B330.WORK_TIME>>16;	//33
   DATA_TR[n++]=B330.WORK_TIME>> 8;	//34
   DATA_TR[n++]=B330.WORK_TIME>> 0;  //35
-  DATA_TR[n++]=B330.STATUS_OK; 		//36
-
+  DATA_TR[n++]=B330.STATUS_OK; 		  //36
 }
 
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
@@ -3681,6 +3814,8 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 
 }
 
+int adr_BPL=0;
+
 
 void CMD_search (ID_SERVER *id,SERVER *srv)
 {
@@ -3718,7 +3853,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 					 ((u64)srv->MeM[idx2]<<40)|((u64)srv->MeM[idx3]<<32)|
 					 ((u64)srv->MeM[idx4]<<24)|((u64)srv->MeM[idx5]<<16)|
 					 ((u64)srv->MeM[idx6]<< 8)|((u64)srv->MeM[idx7]<< 0);
-			IO("~0 time;");
+			TIME_cons ();
 			Transf("\r\n------\r\n");					
 		} else		
 		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
@@ -3796,7 +3931,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
     //----------------------------------------------------------------------------------  
       data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
-      int adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+      adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
 
       SETUP_IP1_072 (ADR_SLAVE[0],data);//выполняем команду
       Transf("Пришёл IP1 для Мастера 072!\r\n");
@@ -3845,6 +3980,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       u_out("Принят коэффициент коррекции измерения тока:",data);
       TMP_f=data;      
       B330.Corr_I[index_ch]=TMP_f/1000;
+      CorrI_write (); 
     }else
        if (id->CMD_TYPE[i]==CMD_Corr_U)//команда переустановки коэффициента коррекции напряжения
     {
@@ -3860,6 +3996,26 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       u_out("Принят коэффициент коррекции измерения напряжения:",data);
       TMP_f=data;      
       B330.Corr_U[index_ch]=TMP_f/1000;
+      CorrU_write (); 
+    }else
+       if (id->CMD_TYPE[i]==CMD_Corr_REQ)//команда запроса списка корректирующих коэффициентов
+    {
+      FLAG_CMD=1;
+      TIME_cons ();
+      Transf("\r\nПринят запрос на список корректирющих коэффициентов.\r\n");
+      Console_corr();      
+      DAT_CORR_REQ_FORM();//заполняем транспортный массив
+      //ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);
+      SYS_CMD_MSG(
+			id,//реестр
+			&INVOICE[ADR],//структура квитанций	
+			i,	 		     	//индекс в реестре
+			MSG_Corr_REQ,	//тип сообщения
+			64,		 		    //объём данных сообщения в байтах
+			DAT_REQ,	    //данные сообщения - массив данных
+			TIME_SYS	  	//время составления квитанции
+			);
     }
 		
     //----------------------------------------------------------
@@ -3867,8 +4023,8 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     if (FLAG_CMD==1)
     {
       FLAG_CMD=0;
-	  //------------------------------
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
+	  //------------------------------ 
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда     
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
 			id,			        //указатель на реестр
 			&INVOICE[ADR],  //указатель на структуру квитанции
@@ -4292,7 +4448,7 @@ void DISPATCHER (u32 timer)
 
       if (FLAG_DWN(&POINTER_ADR_COLLECT))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Идёт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
         FUNC_FLAG_UP (&POINTER_ADR_REQ,3000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
@@ -4300,14 +4456,14 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_ADR_REQ))
       {
-        IO("~0 time;");
+        TIME_cons ();
         SLAVE_COUNT ();
         if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,200);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
         return;
       } else
       if (FLAG_DWN(&POINTER_MASTER_IP0_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем мастер IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
@@ -4315,7 +4471,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_SLAVE_IP0_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем слейв IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP (&POINTER_MASTER_IP1_SETUP,100);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
@@ -4323,7 +4479,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_MASTER_IP1_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем мастер IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP  (&POINTER_SLAVE_IP1_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
@@ -4331,7 +4487,7 @@ void DISPATCHER (u32 timer)
       } else
         if (FLAG_DWN(&POINTER_SLAVE_IP1_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем слейв IP1!\r\n");
         SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP  (&POINTER_DEST_MASTER_IP0_SETUP,100);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
@@ -4339,7 +4495,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_DEST_MASTER_IP0_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем мастер DEST_IP0!\r\n");
         SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP0_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
@@ -4347,7 +4503,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_DEST_SLAVE_IP0_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем слейв DEST_IP0!\r\n");
         SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP       (&POINTER_DEST_MASTER_IP1_SETUP,100);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
@@ -4355,7 +4511,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_DEST_MASTER_IP1_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем мастер DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP1_SETUP,100);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
@@ -4363,7 +4519,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_DEST_SLAVE_IP1_SETUP))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Устанавливаем слейв DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,100); //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
@@ -4371,7 +4527,7 @@ void DISPATCHER (u32 timer)
       } else
       if (FLAG_DWN(&POINTER_ETHERNET_RERUN))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Рестарт МАК ячеек 072!\r\n");
         CMD_MAC_RECONF ();
         return;
@@ -4379,7 +4535,7 @@ void DISPATCHER (u32 timer)
        if (FLAG_DWN(&POINTER_TEST_485))
       {
 		    FUNC_FLAG_UP (&POINTER_TEST_485_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Посылаем код по шине 485!\r\n");
         tmp0=ADR_SLAVE[1];//
         BUS_485_TEST (tmp0);
@@ -4387,7 +4543,7 @@ void DISPATCHER (u32 timer)
       } else		
 	    if (FLAG_DWN(&POINTER_TEST_485_REQ))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Проверяем результат теста шины 485!\r\n");
         if (FLAG_ASQ_TEST_485==1) Transf("Тест пройден!\r\n");
 		    else
@@ -4405,7 +4561,7 @@ void DISPATCHER (u32 timer)
        if (FLAG_DWN(&POINTER_TEST_SPI))
       {
 		    FUNC_FLAG_UP (&POINTER_TEST_SPI_REQ,10);//ставим отложенную задачу для проверки наличия ответа на тест 485
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Посылаем код по шине SPI!\r\n");
         FLAG_ASQ_TEST_SPI=0;
         tmp0=ADR_SLAVE[1];//
@@ -4416,7 +4572,7 @@ void DISPATCHER (u32 timer)
       }else		
 	    if (FLAG_DWN(&POINTER_TEST_SPI_REQ))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Проверяем результат теста шины SPI!\r\n");
         tmp0=ADR_SLAVE[1];//
 		    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
@@ -4430,7 +4586,7 @@ void DISPATCHER (u32 timer)
        if (FLAG_DWN(&POINTER_TEST_JTAG))
       {
 		    FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Опрашиваем шину JTAG!\r\n");
         FLAG_ASQ_TEST_JTAG=0;
         tmp0=jtag_scan(NULL,0);
@@ -4439,7 +4595,7 @@ void DISPATCHER (u32 timer)
       }else		
 	    if (FLAG_DWN(&POINTER_TEST_JTAG_REQ))
       {
-        IO("~0 time;");
+        TIME_cons ();
         Transf("Проверяем результат теста шины JTAG!\r\n");
         u_out("Количество устройств:",jtag_dev_count);
         for(i=0;i<jtag_dev_count;i++)
@@ -4470,7 +4626,7 @@ void FUNC_FLAG_UP (POINTER *p,u32 time)
   PNT[i]=p;
 
   Transf("Поднимаем флаг отложенного задания!\r\n");
-  IO("~0 time;");
+  TIME_cons ();
   u_out("timeout:",time);
 }
 
@@ -4501,6 +4657,79 @@ u32 buf_to_data (u8 *p)
 	return a;
 }
 
+void TABL_CONS (u8 *p,u32 n)
+{
+  int i=0;
+   for (i=0;i<n;i++)
+   {
+     hn_out (p[i+0],0);hn_out (p[i+1],0);hn_out (p[i+2],0);hn_out (p[i+3],0);
+     i=i+3;
+     Transf("\r\n");	
+   }	
+}
+
+void EPCS1_READ (u32 adr,u8 *p,u32 n)
+{
+  while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
+  spi_EPCS1_read(READ_BYTES,adr,p,n);//чтение n байт данных
+}
+
+void EPCS2_READ (u32 adr,u8 *p,u32 n)
+{
+  while ((spi_EPCS2_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
+  spi_EPCS2_read(READ_BYTES,adr,p,n);//чтение n байт данных
+}
+
+void EPCS1_WRITE_BUF(u32 adr,u8 *p,u32 n)
+{
+  while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверЯем что флеш не занЯта
+  spi_EPCS1_wr_ENABLE(); //разрешаем запись во флеш
+  spi_EPCS1_write(WRITE_BYTES,adr,p,n);
+  spi_EPCS1_wr_DISABLE();//запрещаем запись во флеш
+}
+
+void EPCS2_WRITE_BUF(u32 adr,u8 *p,u32 n)
+{
+  while ((spi_EPCS2_STATUS()&1)==1){WATCH_DOG ();};	//проверЯем что флеш не занЯта
+  spi_EPCS2_wr_ENABLE(); //разрешаем запись во флеш
+  spi_EPCS2_write(WRITE_BYTES,adr,p,n);
+  spi_EPCS2_wr_DISABLE();//запрещаем запись во флеш
+}
+
+void EPCS1_ERASE_SECTOR(u32 adr)
+{
+  u8 a[1]={0xff};
+  while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
+  spi_EPCS1_wr_ENABLE();//разрешаем запись во флеш
+  spi_EPCS1_write(ERASE_SECTOR,adr,a,0);
+  spi_EPCS1_wr_DISABLE();//запрещаем запись во флеш
+}
+
+void EPCS2_ERASE_SECTOR(u32 adr)
+{
+  u8 a[1]={0xff};
+  while ((spi_EPCS2_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
+  spi_EPCS2_wr_ENABLE();//разрешаем запись во флеш
+  spi_EPCS2_write(ERASE_SECTOR,adr,a,0);
+  spi_EPCS2_wr_DISABLE();//запрещаем запись во флеш
+}
+
+void EPCS2_ERASE_ALL(void)
+{
+  while ((spi_EPCS2_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
+  spi_EPCS2_wr_ENABLE ();//разрешаем запись во флеш
+  spi_EPCS2_ERASE_BULK();//стираем всЮ во флеш
+  spi_EPCS2_wr_DISABLE();//запрещаем запись во флеш
+}
+
+void EPCS1_ERASE_ALL(void)
+{
+  while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверЯем что флеш не занЯта
+  spi_EPCS1_wr_ENABLE ();//разрешаем запись во флеш
+  spi_EPCS1_ERASE_BULK();//стираем всЮ во флеш
+  spi_EPCS1_wr_DISABLE();//запрещаем запись во флеш
+}
+
 void SERIAL_NUMBER_WR (u32 data)
 {
 	u8 buf[256];
@@ -4510,11 +4739,79 @@ void SERIAL_NUMBER_WR (u32 data)
 	buf[1]=(data>>16)&0xff;
 	buf[2]=(data>> 8)&0xff;
 	buf[3]=(data>> 0)&0xff;
-  while (spi_EPCS_STATUS()==1){};	//проверЯем что флеш не занЯта
-  spi_EPCS_wr_ENABLE(); //разрешаем запись во флеш
-  spi_EPCS_write(WRITE_BYTES,SERIAL_ADR_FLASH,buf,256);
-  spi_EPCS_wr_DISABLE();//запрещаем запись во флеш
+  while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверЯем что флеш не занЯта
+  spi_EPCS1_wr_ENABLE(); //разрешаем запись во флеш
+  spi_EPCS1_write(WRITE_BYTES,SERIAL_ADR_FLASH,buf,256);
+  spi_EPCS1_wr_DISABLE();//запрещаем запись во флеш
 }
+
+//запись коэффициентов коррекции измерения тока
+void PACK_ARR_FLOAT (float *p,u8 *a,u32 n)
+{
+  int i=0;
+  int j=0;
+  int tmp=0;
+  for (i=0;i<n;i++)
+  {
+     tmp=p[i]*1000;
+     a[j+0]=(tmp>>24)&0xff;
+     a[j+1]=(tmp>>16)&0xff;
+     a[j+2]=(tmp>> 8)&0xff;
+     a[j+3]=(tmp>> 0)&0xff;
+     j=j+4;
+  }
+}
+
+void CorrI_write (void) 
+{
+  u8 Arr[32];
+  EPCS1_ERASE_SECTOR(CorrI_ADR_FLASH);//стираем сектор коэффициентов коррекции тока
+  PACK_ARR_FLOAT (B330.Corr_I,Arr,8);
+  int x=8*4;
+  EPCS1_WRITE_BUF(CorrI_ADR_FLASH,Arr,x);//записываем весь массив коэффициентов на флеш
+}
+
+ //запись коэффициентов коррекции измерения напряжения
+void CorrU_write (void)
+{
+   u8 Arr[32];
+   EPCS1_ERASE_SECTOR(CorrU_ADR_FLASH);//стираем сектор коэффициентов коррекции тока
+   PACK_ARR_FLOAT (B330.Corr_U,Arr,8);
+   int x=8*4;
+   EPCS1_WRITE_BUF(CorrU_ADR_FLASH,Arr,x);//записываем весь массив коэффициентов на флеш
+}
+
+void CorrI_read (void)
+{
+  u8 a[64];
+  int x=8*4;//размер массива в байтах
+  int i=0;
+  int   tmp =0;
+  float tmp1=0;
+  EPCS1_READ (CorrI_ADR_FLASH,a,x);
+  for (i=0;i<8;i++) 
+  {
+    tmp =(a[4*i]<<24)+(a[4*i+1]<<16)+(a[4*i+2]<<8)+(a[4*i+3]<<0);
+    tmp1=tmp;
+    B330.Corr_I[i]=tmp1/1000;
+  }
+} 
+
+void CorrU_read (void)
+{
+  u8 a[64];
+  int x=8*4;//размер массива в байтах
+  int i=0;
+  int   tmp =0;
+  float tmp1=0;
+  EPCS1_READ (CorrU_ADR_FLASH,a,x);
+  for (i=0;i<8;i++) 
+  {
+    tmp =(a[4*i]<<24)+(a[4*i+1]<<16)+(a[4*i+2]<<8)+(a[4*i+3]<<0);
+    tmp1=tmp;
+    B330.Corr_U[i]=tmp1/1000;
+  }
+} 
 
 //Считывает серийный номер из флешпамяти
 u64 SERIAL_NUMBER ()
@@ -4523,7 +4820,7 @@ u64 SERIAL_NUMBER ()
    int adr=SERIAL_ADR_FLASH;
    u64 data=0;
 
-   spi_EPCS_read(READ_BYTES,adr,buf,4);
+   spi_EPCS1_read(READ_BYTES,adr,buf,4);
    data=buf_to_data(buf);
    u_out("Серийный номер блока:",data);
    return data;
@@ -4587,7 +4884,8 @@ LM8.TEMP_max=5000;
   Transf("-------------\r\n");
   DE_RS485(1);
   CS_5_MK(1);
-  
+  CS_EPCS1(1);
+  CS_EPCS2(1);  
   //---убрать!!!--------
   //PE14_0;
   //PE12_0;
@@ -4639,8 +4937,11 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 //  TCA_WR(255);//зажигаем все светодиоды на лицевой панели
 //-------------------------------------
   RESET_072(1);//снимаем ресет 072 кассет
-
+ 
   B330.B330_NUMBER=SERIAL_NUMBER ();
+  CorrI_read  ();  //загружаем поправочные коэффициенты для коррекции измерений тока
+  CorrU_read  ();  //загружаем поправочные коэффициенты для коррекции измерений напряжения
+  Console_corr();//выводим загруженные коэффициенты
   B330.PRG_VERSIYA=STM32_VERSION;
   B330.WORK_TIME=TIME_OF_WORK; //время наработки блока в десятках минут;
 
