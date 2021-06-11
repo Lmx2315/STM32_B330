@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // »нтервал обновлени€ индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x090620211046;//номер версии прошивки 12-02 врем€ и 24-05-2021 дата
+u64 STM32_VERSION = 0x110620211803;//номер версии прошивки 12-02 врем€ и 24-05-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -3876,7 +3876,19 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			TCA_WR(data);//выполн€ем команду
-		} else		
+		} else    			
+		if (id->CMD_TYPE[i]==CMD_NUMB_BLOCK_WR)//команда управлени€ светодиодами на лицевой панели
+		{
+      FLAG_CMD=1;
+			idx0=idx_srv(id->INDEX[i],0);//индекс расположени€ данных в "хранилище"
+			idx1=idx_srv(id->INDEX[i],1);//индекс расположени€ данных в "хранилище"
+			idx2=idx_srv(id->INDEX[i],2);//индекс расположени€ данных в "хранилище"
+			idx3=idx_srv(id->INDEX[i],3);//индекс расположени€ данных в "хранилище"
+			
+			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
+			
+			 SERIAL_NUMBER_WR (data);//выполн€ем команду
+		} else			
 		if (id->CMD_TYPE[i]==CMD_12V)//команда включени€ источника +12V
 		{
       FLAG_CMD=1;
@@ -3978,6 +3990,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
       index_ch=srv->MeM[idx0];//индекс канала дл€ корректора
       u_out("ѕрин€т коэффициент коррекции измерени€ тока:",data);
+      u_out("в канале:",index_ch);
       TMP_f=data;      
       B330.Corr_I[index_ch]=TMP_f/1000;
       CorrI_write (); 
@@ -3994,6 +4007,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
       index_ch=srv->MeM[idx0];//индекс канала дл€ корректора
       u_out("ѕрин€т коэффициент коррекции измерени€ напр€жени€:",data);
+      u_out("в канале:",index_ch);
       TMP_f=data;      
       B330.Corr_U[index_ch]=TMP_f/1000;
       CorrU_write (); 
@@ -4732,8 +4746,8 @@ void EPCS1_ERASE_ALL(void)
 
 void SERIAL_NUMBER_WR (u32 data)
 {
-	u8 buf[256];
-  for (int i=0;i<256;i++) buf[i]=0;
+	u8 buf[4];
+  EPCS1_ERASE_SECTOR(SERIAL_ADR_FLASH);//стираем сектор коэффициентов коррекции тока
 	u_out("«аписываем серийный номер:",data);
 	buf[0]=(data>>24)&0xff;
 	buf[1]=(data>>16)&0xff;
@@ -4741,7 +4755,7 @@ void SERIAL_NUMBER_WR (u32 data)
 	buf[3]=(data>> 0)&0xff;
   while ((spi_EPCS1_STATUS()&1)==1){WATCH_DOG ();};	//проверяем что флеш не занята
   spi_EPCS1_wr_ENABLE(); //разрешаем запись во флеш
-  spi_EPCS1_write(WRITE_BYTES,SERIAL_ADR_FLASH,buf,256);
+  spi_EPCS1_write(WRITE_BYTES,SERIAL_ADR_FLASH,buf,4);
   spi_EPCS1_wr_DISABLE();//запрещаем запись во флеш
 }
 
@@ -4760,6 +4774,19 @@ void PACK_ARR_FLOAT (float *p,u8 *a,u32 n)
      a[j+3]=(tmp>> 0)&0xff;
      j=j+4;
   }
+}
+
+void CorrIU_write (void) 
+{
+  int x=0;
+  u8 Arr[32];
+  EPCS1_ERASE_SECTOR(CorrI_ADR_FLASH);//стираем сектор коэффициентов коррекции тока
+  PACK_ARR_FLOAT (B330.Corr_I,Arr,8);
+  x=8*4;
+  EPCS1_WRITE_BUF(CorrI_ADR_FLASH,Arr,x);//записываем весь массив коэффициентов на флеш
+  PACK_ARR_FLOAT (B330.Corr_U,Arr,8);
+  x=8*4;
+  EPCS1_WRITE_BUF(CorrU_ADR_FLASH,Arr,x);//записываем весь массив коэффициентов на флеш
 }
 
 void CorrI_write (void) 

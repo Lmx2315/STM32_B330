@@ -438,6 +438,7 @@ typedef unsigned long uint32;
 #define CMD_Corr_I          201  //команда установки нового коэффициента коррекции измерения тока
 #define CMD_Corr_U          202  //команда установки нового коэффициента коррекции измерения напряжения
 #define CMD_Corr_REQ        203  //команда запроса списка корректирующих коэффициентов
+#define CMD_NUMB_BLOCK_WR   204  //команда записи номера блока
 //------------------------------------------------------------------------ 
 #define SIZE_SERVER  16384  //размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
 #define SIZE_ID        64   //размер реестра  
@@ -450,11 +451,11 @@ typedef unsigned long uint32;
 //тут указываем число страниц на которых храним нароботку блока
 #define N_PAGE_TIME_OF_WORK 20  
 //тут указываем адрес серийного номера во флеш
-#define SERIAL_ADR_FLASH 0x00  
+#define SERIAL_ADR_FLASH 0x00000  
 //тут указываем адрес коэффициента коррекции тока
-#define CorrI_ADR_FLASH 0x200
+#define CorrI_ADR_FLASH 0x040000
 //тут указываем адрес коэффициента коррекции напряжения
-#define CorrU_ADR_FLASH 0x300
+#define CorrU_ADR_FLASH 0x080000
 
 typedef struct    //структура параметров LM
 {
@@ -643,6 +644,7 @@ void CorrU_write(void);
 void Console_corr(void);
 void TIME_cons (void);
 void DAT_CORR_REQ_FORM (void);
+void CorrIU_write (void);
 //-------------JTAG--------------
 void JTAG_SCAN (void);
   u8 SCAN_N    (void);
