@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x180620211241;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x210620211116;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -225,15 +225,15 @@ u32 TIME_OF_SECOND=0;         //cчётчик секунд с начала работы
 u32 TIME_OF_WORK=0;           //время наработки блока в десятках минут
 SYS_STATE_BOARD B330;         //структура содержащая состояние блока Б330
 //----------Адреса кассет 072 на бекплейне--------------
-u32 MASTER_IP0     =0x0103023c;
-u32 MASTER_IP1     =0x0103023d;
-u32 MASTER_DEST_IP0=0x01030201;
-u32 MASTER_DEST_IP1=0x01030202;
+u32 MASTER_IP0     =0x0103063c;
+u32 MASTER_IP1     =0x0103073d;
+u32 MASTER_DEST_IP0=0x01030601;
+u32 MASTER_DEST_IP1=0x01030701;
 
 u32 SLAVE_IP0      =0x0103013c;
-u32 SLAVE_IP1      =0x0103013d;
+u32 SLAVE_IP1      =0x0103023d;
 u32 SLAVE_DEST_IP0 =0x01030101;
-u32 SLAVE_DEST_IP1 =0x01030102;
+u32 SLAVE_DEST_IP1 =0x01030201;
 //------------------------------------------------------
 u8  FLAG_ASQ_TEST_485  =0;    //флаг ответа на запрос теста по 485 шине
 u8  FLAG_ASQ_TEST_JTAG =0;    //флаг ответа на запрос теста по SPI шине
@@ -4501,7 +4501,7 @@ void DISPATCHER (u32 timer)
         Transf("ON RESET for 072.\r\n");
         RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,10);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,500);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
@@ -4509,7 +4509,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
         RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//сбор адресов с устройств на бекплейне
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4200);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
@@ -4527,7 +4527,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("Идёт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
-        FUNC_FLAG_UP (&POINTER_ADR_REQ,1000);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
+        FUNC_FLAG_UP (&POINTER_ADR_REQ,1500);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
         return;
       } else
       if (FLAG_DWN(&POINTER_ADR_REQ))
