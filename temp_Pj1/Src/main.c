@@ -317,6 +317,7 @@ void Initialization_wiznet(void);
 
 /* USER CODE BEGIN PFP */
 u8 START_BP=0;
+u8 PWR_ALL=255;
 
 u8  PWR_072      (u8);
 u8  LM_MFR_MODEL (u8);
@@ -2051,6 +2052,7 @@ if (strcmp(Word,"lm_ID")==0) //
 	  crc_comp =atoi  (DATA_Word); 
       u_out ("принял start:",crc_comp); 
       START_BP=crc_comp;
+	  PWR_ALL=0;
    } else
  if (strcmp(Word,"pwrdn")==0) //
    {
@@ -2506,7 +2508,7 @@ void WATCH_DOG (void)
   * @retval int
   */
   
-void BP_start (u16 a)
+void BP_start (u16 a,u8 pwr)
 {
 	static u8 flag=0;
 	if (a==0)
@@ -2523,9 +2525,9 @@ void BP_start (u16 a)
 		flag=0;
 		UPR_HDS_MK (0);			
 		Transf("Включаем ПИТАНИЕ!\r\n");
-		IO("~0 pwr_072:0;"); //подаём питание на все каналы!!! - без этого не работает i2c			
-		IO("~0 enable_lm:1;");//включаем все м/мы LM
-    FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4000);//ставим отложенную задачу для опроса кассет на бекплейне
+		PWR_072(pwr); //подаём питание на все каналы!!! - без этого не работает i2c			
+		ENABLE_LM25056_MK(1); //включаем все м/мы LM
+        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -2583,17 +2585,20 @@ u8 PWR_072 (u8 z)
 	 uint8_t state=0;
 	 uint8_t v=0;
 	 u32 error=0;
+	 int i=0; 
+	 
+	for (i=0;i<8;i++) B330.CH[i]=1;
 	
 	HAL_I2C_Init(&hi2c1);	
 
-	if (z&(1<<0)) v=v|(1<<6);
-	if (z&(1<<1)) v=v|(1<<4);
-	if (z&(1<<2)) v=v|(1<<5);
-	if (z&(1<<3)) v=v|(1<<3);
-	if (z&(1<<4)) v=v|(1<<2);
-	if (z&(1<<5)) v=v|(1<<1);
-	if (z&(1<<6)) v=v|(1<<0);
-	if (z&(1<<7)) v=v|(1<<7);
+	if (z&(1<<0)) {v=v|(1<<6); B330.CH[7]=0;}
+	if (z&(1<<1)) {v=v|(1<<4); B330.CH[6]=0;}
+	if (z&(1<<2)) {v=v|(1<<5); B330.CH[5]=0;}
+	if (z&(1<<3)) {v=v|(1<<3); B330.CH[4]=0;}
+	if (z&(1<<4)) {v=v|(1<<2); B330.CH[3]=0;}
+	if (z&(1<<5)) {v=v|(1<<1); B330.CH[2]=0;}
+	if (z&(1<<6)) {v=v|(1<<0); B330.CH[1]=0;}
+	if (z&(1<<7)) {v=v|(1<<7); B330.CH[0]=0;}
 	
 	a[0] =   0xf0;  //команда-регистр включение подтяжки для 0-7 выходы
 	a[1] =   v;
@@ -3841,7 +3846,9 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 	
 	u64 ADR=0;
 	u32 data=0;
-	u8 D[4];
+	u32 tmp0=0;
+	u32 tmp1=0;
+	u8  D[4];
 
 	for (i=0;i<SIZE_ID;i++)
 	{		
@@ -3908,8 +3915,9 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
 			
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
-			
-			START_BP=data;//выполняем команду			
+			tmp0= (srv->MeM[idx2]);
+			START_BP=data;//выполняем команду	
+		    PWR_ALL=tmp0; //какие каналы запитать сразу
 			FLAG_ADRES_SENDER_CMD=1;//поднимаем флаг того что у нас есть куда отправлять квитанции
 		} else		
 		if (id->CMD_TYPE[i]==CMD_CH_UP)//команда включения канала питания, исправить длинну данных команды!!!
@@ -4214,14 +4222,14 @@ void CONTROL_SYS (void)
     LM7.TEMP=LM_TEMP(7);
     LM8.TEMP=LM_TEMP(8);
 
-    if (LM1.TEMP>tmp0) tmp0=LM1.TEMP;
-    if (LM2.TEMP>tmp0) tmp0=LM2.TEMP;
-    if (LM3.TEMP>tmp0) tmp0=LM3.TEMP;
-    if (LM4.TEMP>tmp0) tmp0=LM4.TEMP;
-    if (LM5.TEMP>tmp0) tmp0=LM5.TEMP;
-    if (LM6.TEMP>tmp0) tmp0=LM6.TEMP;
-    if (LM7.TEMP>tmp0) tmp0=LM7.TEMP;
-    if (LM8.TEMP>tmp0) tmp0=LM8.TEMP;
+    if ((LM1.TEMP>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.TEMP;
+    if ((LM2.TEMP>tmp0)&&(B330.CH[1]==1)) tmp0=LM2.TEMP;
+    if ((LM3.TEMP>tmp0)&&(B330.CH[2]==1)) tmp0=LM3.TEMP;
+    if ((LM4.TEMP>tmp0)&&(B330.CH[3]==1)) tmp0=LM4.TEMP;
+    if ((LM5.TEMP>tmp0)&&(B330.CH[4]==1)) tmp0=LM5.TEMP;
+    if ((LM6.TEMP>tmp0)&&(B330.CH[5]==1)) tmp0=LM6.TEMP;
+    if ((LM7.TEMP>tmp0)&&(B330.CH[6]==1)) tmp0=LM7.TEMP;
+    if ((LM8.TEMP>tmp0)&&(B330.CH[7]==1)) tmp0=LM8.TEMP;
 
     B330.TEMP_MAX=tmp0;tmp0=0;//4-ре значащих разряда
     //B330.P = 1000;
@@ -4235,17 +4243,17 @@ void CONTROL_SYS (void)
     LM7.I=FILTR (LM_in_i(7),LM7.FI,12);
     LM8.I=FILTR (LM_in_i(8),LM8.FI,12);
 
-    if (LM1.I>tmp0) tmp0=LM1.I;
-    if (LM2.I>tmp0) tmp0=LM2.I;
-    if (LM3.I>tmp0) tmp0=LM3.I;
-    if (LM4.I>tmp0) tmp0=LM4.I;
-    if (LM5.I>tmp0) tmp0=LM5.I;
-    if (LM6.I>tmp0) tmp0=LM6.I;
-    if (LM7.I>tmp0) tmp0=LM7.I;
-    if (LM8.I>tmp0) tmp0=LM8.I;
+    if ((LM1.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.I;
+    if ((LM2.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM2.I;
+    if ((LM3.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM3.I;
+    if ((LM4.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM4.I;
+    if ((LM5.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM5.I;
+    if ((LM6.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM6.I;
+    if ((LM7.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM7.I;
+    if ((LM8.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM8.I;
 
     B330.I = tmp0;tmp0=0;//3-три значащих разряда
-//    B330.I = 1000;
+
     //Измерение напряжения в каналах
     LM1.U=FILTR (LM_v(1),LM1.FU,12);
     LM2.U=FILTR (LM_v(2),LM2.FU,12);
@@ -4268,29 +4276,27 @@ void CONTROL_SYS (void)
 
     B330.P = LM1.P+LM2.P+LM3.P+LM4.P+LM5.P+LM6.P+LM7.P+LM8.P;//4-ре значащих разряда
 
-    if (LM1.U>tmp0) tmp0=LM1.U;
-    if (LM2.U>tmp0) tmp0=LM2.U;
-    if (LM3.U>tmp0) tmp0=LM3.U;
-    if (LM4.U>tmp0) tmp0=LM4.U;
-    if (LM5.U>tmp0) tmp0=LM5.U;
-    if (LM6.U>tmp0) tmp0=LM6.U;
-    if (LM7.U>tmp0) tmp0=LM7.U;
-    if (LM8.U>tmp0) tmp0=LM8.U;  
+    if ((LM1.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.U;
+    if ((LM2.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM2.U;
+    if ((LM3.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM3.U;
+    if ((LM4.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM4.U;
+    if ((LM5.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM5.U;
+    if ((LM6.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM6.U;
+    if ((LM7.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM7.U;
+    if ((LM8.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM8.U;  
 
     B330.U_max=tmp0;tmp0=100000;//4-ре значащих разряда
-  //B330.U_max=1000;
 
-    if (LM1.U<tmp0) tmp0=LM1.U;
-    if (LM2.U<tmp0) tmp0=LM2.U;
-    if (LM3.U<tmp0) tmp0=LM3.U;
-    if (LM4.U<tmp0) tmp0=LM4.U;
-    if (LM5.U<tmp0) tmp0=LM5.U;
-    if (LM6.U<tmp0) tmp0=LM6.U;
-    if (LM7.U<tmp0) tmp0=LM7.U;
-    if (LM8.U<tmp0) tmp0=LM8.U;   
+    if ((LM1.U<tmp0)&&(B330.CH[0]==1)) tmp0=LM1.U;
+    if ((LM2.U<tmp0)&&(B330.CH[1]==1)) tmp0=LM2.U;
+    if ((LM3.U<tmp0)&&(B330.CH[2]==1)) tmp0=LM3.U;
+    if ((LM4.U<tmp0)&&(B330.CH[3]==1)) tmp0=LM4.U;
+    if ((LM5.U<tmp0)&&(B330.CH[4]==1)) tmp0=LM5.U;
+    if ((LM6.U<tmp0)&&(B330.CH[5]==1)) tmp0=LM6.U;
+    if ((LM7.U<tmp0)&&(B330.CH[6]==1)) tmp0=LM7.U;
+    if ((LM8.U<tmp0)&&(B330.CH[7]==1)) tmp0=LM8.U;   
 
     B330.U_min=tmp0;tmp0=0; //4-ре значащих разряда
- //   B330.U_min=1000;   
 
   } else
 	  if ((START_BP==0)&&(flag==1))
@@ -4314,7 +4320,7 @@ void CONTROL_SYS (void)
     LM7.U=0;
     LM8.U=0;
 	
-	  LM1.I=0;
+	LM1.I=0;
     LM2.I=0;
     LM3.I=0;
     LM4.I=0;
@@ -4334,14 +4340,33 @@ void CONTROL_SYS (void)
   }
   
   u8 err=0;
-  if (B330.TEMP_MAX>5000) err++;
-  if (B330.I>2500)        err++;
-  if (B330.U_min<1100)    err++;
-  if (B330.U_max>1250)    err++;
-  if (B330.P    >30000)   err++;
-  if (B330.FLAG_1HZ==0)   err++;
-
+  if  (B330.TEMP_MAX>5000) err++;
+  if ((B330.I    >2500)&&(B330.I    !=4294967295))    err++;
+  if  (B330.U_min<1100)    err++;
+  if ((B330.U_max>1250)&&(B330.U_max!=4294967295))    err++;
+  if  (B330.P    >30000)   err++;
+  if  (B330.FLAG_1HZ==0)   err++;
+  
+ /* 
+  Transf("\r\n");
+  u_out("B330.CH[0]:",B330.CH[0]);
+  u_out("B330.CH[1]:",B330.CH[1]);
+  u_out("B330.CH[2]:",B330.CH[2]);
+  u_out("B330.CH[3]:",B330.CH[3]);
+  u_out("B330.CH[4]:",B330.CH[4]);
+  u_out("B330.CH[5]:",B330.CH[5]);
+  u_out("B330.CH[6]:",B330.CH[6]);
+  u_out("B330.CH[7]:",B330.CH[7]);
+  
+  u_out("B330.TEMP_MAX:",B330.TEMP_MAX);
+  u_out("B330.I       :",B330.I);
+  u_out("B330.U_min   :",B330.U_min);
+  u_out("B330.U_max   :",B330.U_max);
+  u_out("B330.P       :",B330.P);
+  u_out("B330.FLAG_1HZ:",B330.FLAG_1HZ);
+*/
   if (err!=0) B330.STATUS_OK=0; else B330.STATUS_OK=1;
+  //u_out("B330.STATUS_OK:",B330.STATUS_OK);
 }
 
 void ALARM_SYS_TEMP (void)  
@@ -4501,7 +4526,7 @@ void DISPATCHER (u32 timer)
         Transf("ON RESET for 072.\r\n");
         RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,500);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,100);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
@@ -4509,7 +4534,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
         RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4200);//сбор адресов с устройств на бекплейне
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,6200);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
@@ -5042,7 +5067,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	WATCH_DOG ();
 	LED();
 	UART_conrol();
-	BP_start(START_BP);
+	BP_start(START_BP,PWR_ALL);
 	
 	if (EVENT_INT1==1)
 	{
