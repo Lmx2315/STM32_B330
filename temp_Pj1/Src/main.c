@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x210620211116;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x230620211116;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -830,7 +830,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : PB12 PB9 */
   GPIO_InitStruct.Pin   = GPIO_PIN_0|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15|GPIO_PIN_9;
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull  = GPIO_NOPULL;
+  GPIO_InitStruct.Pull  = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -1023,9 +1023,7 @@ u8 spi4send8 (u8 d) //8 бит
 {
 	u8 a1;
 	u8  b;
-
-  a1 = (d)      &0xff;
-  
+  a1 = (d)      &0xff;  
   HAL_SPI_TransmitReceive(&hspi4, &a1, &b,1, 5000); 
   return b; 
 }
@@ -1034,9 +1032,7 @@ u8 spi5send8 (u8 d) //8 бит
 {
 	u8 a1;
 	u8  b;
-
-  a1 = (d)      &0xff;
-  
+  a1 = (d)      &0xff;  
   HAL_SPI_TransmitReceive(&hspi5, &a1, &b,1, 5000); 
   return b; 
 }
@@ -1852,7 +1848,7 @@ if (strcmp(Word,"rst_072")==0) //
    {
 	 crc_comp =atoi(DATA_Word);	
 	 u_out("принял rst_072:",crc_comp);
-	 RESET_072(crc_comp);
+	 //RESET_072(crc_comp);
    } else   
 if (strcmp(Word,"rs485_test_OK")==0) // проверяем шину 485! Должен прийти ответ.
    {
@@ -3935,7 +3931,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 		} else
 		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда установки IP0 адреса определённой кассеты 072 
 		{
-      FLAG_CMD=1;
+          FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
 			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
 			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
@@ -4504,8 +4500,13 @@ void SLAVE_COUNT ()
 //посылаем запрос на бекплейн про адреса блоков 072
 void req_col (void)
 {
+   int i=0;
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
   NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
+   for (i=0;i<8;i++)
+    {
+      ADR_SLAVE[i]=0xff;//очищаем массив адресов
+    }
 }
 
 //посылаем команду на переконфигурирование ETH MAC ячеек 072
@@ -4524,17 +4525,17 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("ON RESET for 072.\r\n");
-        RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
+        //RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,100);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,200);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
       {
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
-        RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,6200);//сбор адресов с устройств на бекплейне
+        //RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,5000);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
@@ -4543,7 +4544,7 @@ void DISPATCHER (u32 timer)
         Transf("Проверка сигнала RESET для 072.\r\n");
 		u_out("Количество блоков 072 на бекплейне:",NUMBER_OF_B072);
         if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
-
+		FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,200);
         MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
         return;
       } else
@@ -4560,72 +4561,74 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         SLAVE_COUNT ();
 		if (FLAG_CHECK_RST_072==1) FUNC_FLAG_UP (&POINTER_CHECK_RESET_072,10);//поднимаем флаг следующей задачи - проверка работоспособности сигнала RESET
-            FLAG_CHECK_RST_072=0;
-        if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,200);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
+		else 
+		if (NUMBER_OF_B072>0) FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,200);//поднимаем флаг следующей задачи - установка блокам 072 IP0 адресов, если эти блоки есть
+            
+			FLAG_CHECK_RST_072=0;        
         return;
       } else
       if (FLAG_DWN(&POINTER_MASTER_IP0_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем мастер IP0!\r\n");
-        SETUP_IP0_072 (ADR_SLAVE[0],MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
-        FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,50);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        SETUP_IP0_072 (1,MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,10);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
        if (FLAG_DWN(&POINTER_SLAVE_IP0_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем слейв IP0!\r\n");
-        SETUP_IP0_072 (ADR_SLAVE[1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP (&POINTER_MASTER_IP1_SETUP,50);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        SETUP_IP0_072 (ADR_SLAVE[NUMBER_OF_B072-1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP (&POINTER_MASTER_IP1_SETUP,10);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
       if (FLAG_DWN(&POINTER_MASTER_IP1_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем мастер IP1!\r\n");
-        SETUP_IP1_072 (ADR_SLAVE[0],MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-        FUNC_FLAG_UP  (&POINTER_SLAVE_IP1_SETUP,50);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        SETUP_IP1_072 (1,MASTER_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP  (&POINTER_SLAVE_IP1_SETUP,10);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
         if (FLAG_DWN(&POINTER_SLAVE_IP1_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем слейв IP1!\r\n");
-        SETUP_IP1_072 (ADR_SLAVE[1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP  (&POINTER_DEST_MASTER_IP0_SETUP,50);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+        SETUP_IP1_072 (ADR_SLAVE[NUMBER_OF_B072-1],SLAVE_IP1); //отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP  (&POINTER_DEST_MASTER_IP0_SETUP,10);//поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
         return;
       } else
       if (FLAG_DWN(&POINTER_DEST_MASTER_IP0_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем мастер DEST_IP0!\r\n");
-        SETUP_DEST_IP0_072 (ADR_SLAVE[0],MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP0_SETUP,50);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        SETUP_DEST_IP0_072 (1,MASTER_DEST_IP0);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP0_SETUP,10);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
         return;
       } else
       if (FLAG_DWN(&POINTER_DEST_SLAVE_IP0_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем слейв DEST_IP0!\r\n");
-        SETUP_DEST_IP0_072 (ADR_SLAVE[1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP       (&POINTER_DEST_MASTER_IP1_SETUP,50);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
+        SETUP_DEST_IP0_072 (ADR_SLAVE[NUMBER_OF_B072-1], SLAVE_DEST_IP0);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP       (&POINTER_DEST_MASTER_IP1_SETUP,10);    //поднимаем флаг следующей задачи - установка блокам 072 DEST_IP1 адресов
         return;
       } else
       if (FLAG_DWN(&POINTER_DEST_MASTER_IP1_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем мастер DEST_IP1!\r\n");
-        SETUP_DEST_IP1_072 (ADR_SLAVE[0],MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
-        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP1_SETUP,50);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
+        SETUP_DEST_IP1_072 (1,MASTER_DEST_IP1);//отсылаем IP1 мастеру , он всегда стоит раньше всех на бекплейне
+        FUNC_FLAG_UP       (&POINTER_DEST_SLAVE_IP1_SETUP,10);    //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
         return;
       } else
       if (FLAG_DWN(&POINTER_DEST_SLAVE_IP1_SETUP))
       {
         TIME_cons ();
         Transf("Устанавливаем слейв DEST_IP1!\r\n");
-        SETUP_DEST_IP1_072 (ADR_SLAVE[1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
-        FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,50); //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
+        SETUP_DEST_IP1_072 (ADR_SLAVE[NUMBER_OF_B072-1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
+        FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,10); //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
         return;
       } else
       if (FLAG_DWN(&POINTER_ETHERNET_RERUN))
@@ -4640,7 +4643,7 @@ void DISPATCHER (u32 timer)
 		FUNC_FLAG_UP (&POINTER_TEST_485_REQ,300);//ставим отложенную задачу для проверки наличия ответа на тест 485
         TIME_cons ();
         Transf("Посылаем код по шине 485!\r\n");
-        tmp0=ADR_SLAVE[1];//
+        tmp0=ADR_SLAVE[NUMBER_OF_B072-1];//
         BUS_485_TEST (tmp0);	
         return;
       } else		
@@ -4667,7 +4670,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("Посылаем код по шине SPI!\r\n");
         FLAG_ASQ_TEST_SPI=0;
-        tmp0=ADR_SLAVE[1];//
+        tmp0=ADR_SLAVE[NUMBER_OF_B072-1];//
         u_out("Adr:",ADR_SLAVE[1]);
 		    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
         SPI_BP_WRITE (tmp0,0xDEEDBEEF);//посылаем код по адресу ADR_SLAVE[1]
@@ -4677,7 +4680,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("Проверяем результат теста шины SPI!\r\n");
-        tmp0=ADR_SLAVE[1];//
+        tmp0=ADR_SLAVE[NUMBER_OF_B072-1];//
 		    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
         tmp0=SPI_BP_READ (tmp0);//считываем код из кассеты
         x_out("Ancwer:",tmp0);
@@ -4688,7 +4691,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_JTAG))
       {
-		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		FUNC_FLAG_UP (&POINTER_TEST_JTAG_REQ,500);//
         TIME_cons ();
         Transf("Опрашиваем шину JTAG!\r\n");
         FLAG_ASQ_TEST_JTAG=0;
@@ -4706,9 +4709,9 @@ void DISPATCHER (u32 timer)
           un_out("",i);Transf("] ");xn_out("",jtag_devs[i].idcode);Transf(" - ");Transf(jtag_devs[i].descr);Transf("\r\n");
         }        
 
-        if (jtag_dev_count==2)
+        if (jtag_dev_count==NUMBER_OF_B072)
         {
-        	if (jtag_devs[1].idcode==0x2a020dd)
+        	if (jtag_devs[NUMBER_OF_B072-1].idcode==0x2a020dd)
         	{     Transf("Тест пройден!\r\n"   );FLAG_ASQ_TEST_JTAG=1;}
 		    else  Transf("Тест не пройден!\r\n");
         } 
@@ -4982,7 +4985,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 //  Delay(1000);
-	RESET_072(0);
+//	RESET_072(0);
 //------SETUP----------
 LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
 LM2.TEMP_max=5000;
