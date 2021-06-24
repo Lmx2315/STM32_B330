@@ -65,6 +65,7 @@ extern u32 TIMER_T1HZ_MK;
 extern u32 TIMER_LED;
 extern u32 TIMER_CONTROL_SYS;
 extern u32 TIMER_TIMEOUT;//таймер таймаута ожидания ответов
+extern u32 TIMER_LS;
 /* USER CODE END PV */
 extern POINTER  * PNT[PNT_BUF];  //массив указателей на отложенные задачи
 /* Private function prototypes -----------------------------------------------*/
@@ -239,6 +240,7 @@ void SysTick_Handler(void)
   TIMER_T1HZ_MK++;
   TIMER_LED++;
   TIMER_CONTROL_SYS++;
+  TIMER_LS++;
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */

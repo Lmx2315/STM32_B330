@@ -1867,8 +1867,9 @@ u32 ADR_FINDER (u64 adr,ADR_SENDER *a) //ищем адрес отправителя в структуре адре
 {
 	u32 i=0;
 	u32 n=0;
-
+/*
 	n=a->IDX;
+	
 	//ищем среди уже записаных адресов
 	while (i<quantity_SENDER)
 	{
@@ -1889,7 +1890,7 @@ u32 ADR_FINDER (u64 adr,ADR_SENDER *a) //ищем адрес отправителя в структуре адре
 		   i=a->IDX;
 		   	 a->IDX++;
 	} 
-		
+		*/
 //	u_out("n:",n);	
 //	u_out("a->IDX:",a->IDX);
 //	u_out("   adr:",adr);

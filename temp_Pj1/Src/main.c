@@ -195,6 +195,7 @@ u8 EVENT_INT6=0;
 u8 EVENT_INT7=0;
 u8 FLAG_DMA_ADC=0;
 
+
 u32 TEST_LED     =0;
 u64 TIME_SYS     =0;//переменная хранить системное время в милисекундах
 u32 TIME_TEST    =0;
@@ -202,6 +203,9 @@ u32 ID_CMD       =0;//переменная хранить текущий ID наших квитанций
 u32 FLAG_T1HZ_MK =0;//Это флаг показывает что в течении пары секунд была одна секундная метка
 u32 TIMER_T1HZ_MK=0;//Это контрольный таймер для проверки наличия секундной метки
 u8  PWR_CHANNEL=255;
+u32 TIMER_LS=0;
+u8 FLAG_LS=0;
+
 
 //флаги севтодиодов
 u8  LED_ISPRAV_AC=0;
@@ -3876,7 +3880,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 			ADRES_SENDER_CMD=ADR;
 			//------------------------------------
-			SYS_INFO_SEND_UDP (id,srv);
+			//SYS_INFO_SEND_UDP ();
 		}	else		
 		if (id->CMD_TYPE[i]==CMD_LED)//команда управления светодиодами на лицевой панели
 		{
@@ -4106,18 +4110,22 @@ u8 PIN_control_PB5 (void)
 void CONTROL_T1HZ_MK (void)
 {
 	u8 val=0;
-	if ((TIMER_T1HZ_MK>1500)&&(FLAG_T1HZ_MK==1)) 
+	if ((TIMER_T1HZ_MK>1050)&&(FLAG_T1HZ_MK==1)) 
 	{
 		FLAG_T1HZ_MK=0;
 		Transf("ПРОПАЛ СИГНАЛ T1HZ_MK!!!\r\n");
 	}
 	B330.FLAG_1HZ=FLAG_T1HZ_MK;
+	if (FLAG_T1HZ_MK==1) LED_SINHR=1; else LED_SINHR=2;
+	
 }
   
 void LED_CONTROL (void)
 {
        u32 z =0;
 static u32 z0; 
+
+if (TIMER_LS>2000) {LED_LS=2;}
 
 z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
 				((LED_OFCH     &3)<<21)+
@@ -4209,14 +4217,14 @@ void CONTROL_SYS (void)
     LM_MFR_ID(7);
     LM_MFR_ID(8);
     //измерение температуры
-    LM1.TEMP=LM_TEMP(1);
-    LM2.TEMP=LM_TEMP(2);
-    LM3.TEMP=LM_TEMP(3);
-    LM4.TEMP=LM_TEMP(4);
-    LM5.TEMP=LM_TEMP(5);
-    LM6.TEMP=LM_TEMP(6);
-    LM7.TEMP=LM_TEMP(7);
-    LM8.TEMP=LM_TEMP(8);
+    if (B330.CH[0]==1) LM1.TEMP=LM_TEMP(1); else  LM1.TEMP=20;
+    if (B330.CH[1]==1) LM2.TEMP=LM_TEMP(2); else  LM2.TEMP=20;
+    if (B330.CH[2]==1) LM3.TEMP=LM_TEMP(3); else  LM3.TEMP=20;
+    if (B330.CH[3]==1) LM4.TEMP=LM_TEMP(4); else  LM4.TEMP=20;
+    if (B330.CH[4]==1) LM5.TEMP=LM_TEMP(5); else  LM5.TEMP=20; 
+    if (B330.CH[5]==1) LM6.TEMP=LM_TEMP(6); else  LM6.TEMP=20;
+    if (B330.CH[6]==1) LM7.TEMP=LM_TEMP(7); else  LM7.TEMP=20; 
+    if (B330.CH[7]==1) LM8.TEMP=LM_TEMP(8); else  LM8.TEMP=20;
 
     if ((LM1.TEMP>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.TEMP;
     if ((LM2.TEMP>tmp0)&&(B330.CH[1]==1)) tmp0=LM2.TEMP;
@@ -4525,7 +4533,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("ON RESET for 072.\r\n");
-        //RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
+        RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
         FUNC_FLAG_UP (&POINTER_RESET_072_1,200);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
@@ -4534,7 +4542,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
-        //RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
+        RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
 		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,5000);//сбор адресов с устройств на бекплейне
 		return;
       } else
@@ -4985,7 +4993,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 //  Delay(1000);
-//	RESET_072(0);
+	RESET_072(0);
 //------SETUP----------
 LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
 LM2.TEMP_max=5000;
@@ -5062,6 +5070,16 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
   Console_corr();//выводим загруженные коэффициенты
   B330.PRG_VERSIYA=STM32_VERSION;
   B330.WORK_TIME=TIME_OF_WORK; //время наработки блока в десятках минут;
+  
+  LED_ISPRAV_AC=1;
+  LED_PROGR    =2;
+  LED_OFCH     =1;
+  LED_SINHR    =1;
+  LED_LS       =2;
+  LED_ISPR_J330=1;
+  LED_OTKL_AC  =1;
+  LED_TEMP	   =1;
+
 
   while (1)
   {
@@ -5076,7 +5094,9 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	{
 		EVENT_INT1=0;
 	//	Transf("event 1!\r");
-		RECEIVE_udp (0, 3001,1);		
+		RECEIVE_udp (0, 3001,1);	
+		LED_LS =1;//есть связь по ЛС
+		TIMER_LS=0;
 	}; 
 	
 	if (EVENT_INT3==1)//контроль секундной метки T1HZ_MK
