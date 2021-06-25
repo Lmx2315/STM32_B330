@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x230620211116;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x250620211109;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -1667,6 +1667,14 @@ u32 SPI_BP_READ (u32 adr)
   u32 tmp0;
   adr=(adr<<4)|0x3;
   tmp0=FPGA_rSPI (32,adr);
+  return tmp0;
+}
+
+u64 SPI_BP64_READ (u32 adr)
+{
+  u64 tmp0;
+  adr=(adr<<4)|0x8;//0x8 - адрес регистра чтения
+  tmp0=FPGA_rSPI (64,adr);
   return tmp0;
 }
 //----------------------------------------------------------
@@ -4400,6 +4408,7 @@ void UART_CNTR (UART_HandleTypeDef *huart)
 void SETUP_IP0_072 (u8 adr,u32 ip)
 {
   u8 a[64];
+  u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
 
    strcpy(a,"~0 setup_IP0:"); 
@@ -4413,11 +4422,16 @@ void SETUP_IP0_072 (u8 adr,u32 ip)
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
+   
+   tmp0=adr;//
+   if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
+   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_IP1_072 (u8 adr,u32 ip)
 {
   u8 a[64];
+  u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
 
    strcpy(a,"~0 setup_IP1:"); 
@@ -4426,16 +4440,20 @@ void SETUP_IP1_072 (u8 adr,u32 ip)
    strcat(a,strng);
    strcat(a,";\r\n");
 
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
+   
+   tmp0=adr;//
+   if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
+   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
 {
   u8 a[64];
+  u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
 
    strcpy(a,"~0 dest_IP0:"); 
@@ -4444,16 +4462,20 @@ void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
    strcat(a,strng);
    strcat(a,";\r\n");
 
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
+   
+   tmp0=adr;//
+   if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
+   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
 {
   u8 a[64];
+  u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
 
    strcpy(a,"~0 dest_IP1:"); 
@@ -4462,11 +4484,14 @@ void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
    strcat(a,strng);
    strcat(a,";\r\n");
 
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
+   
+   tmp0=adr;//
+   if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
+   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void REQ_VERSIYA (void)
@@ -4521,6 +4546,24 @@ void req_col (void)
 void CMD_MAC_RECONF ()
 {
   Transf2("~0 eth_config;");//отсылаем запрос 
+}
+
+//считываем состояние с блоко 072 по бекплейну spi
+u64 BP_072_READ (u8 adr)
+{
+  u8  tmp0;
+  u64 tmp1;
+  u32 x0;
+  u32 x1;
+  tmp0=adr;
+  if (tmp0==8) tmp0=0;          //поправка для 8-го адресного места на шине бекплейна!
+      tmp1=SPI_BP64_READ (tmp0);//считываем код из кассеты
+  x0=tmp1;
+  x1=tmp1>>32;
+//  u_out("072:",adr);
+//  x_out("x0 :",x0);
+//  x_out("x1 :",x1);
+return tmp1;
 }
 
 //запускает отложенные задачи 
@@ -4952,6 +4995,19 @@ u64 SERIAL_NUMBER ()
    return data;
 }
 
+void SYS_072_STATE (void)
+{
+			            BP_072_READ (1);//кассета мастер		
+  if (NUMBER_OF_B072>0) BP_072_READ (ADR_SLAVE[1]);//кассета слев
+  if (NUMBER_OF_B072>1) BP_072_READ (ADR_SLAVE[2]);//кассета слев
+  if (NUMBER_OF_B072>2) BP_072_READ (ADR_SLAVE[3]);//кассета слев
+  if (NUMBER_OF_B072>3) BP_072_READ (ADR_SLAVE[4]);//кассета слев
+  if (NUMBER_OF_B072>4) BP_072_READ (ADR_SLAVE[5]);//кассета слев
+  if (NUMBER_OF_B072>5) BP_072_READ (ADR_SLAVE[6]);//кассета слев
+  if (NUMBER_OF_B072>6) BP_072_READ (ADR_SLAVE[7]);//кассета слев
+  if (NUMBER_OF_B072>7) BP_072_READ (ADR_SLAVE[8]);//кассета слев
+}
+
 int main(void)
 {
 	int i=0;
@@ -5104,6 +5160,9 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 		//Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_T1HZ_MK==0) Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_ADRES_SENDER_CMD==1) SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);//отсылаем квитанцию о нашем состоянии
+		
+        SYS_072_STATE ();//узнаём состояние 072 блоков
+		
 		EVENT_INT3=0;
 		FLAG_T1HZ_MK=1;
 		TIMER_T1HZ_MK=0;
