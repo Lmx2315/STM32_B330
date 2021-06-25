@@ -215,7 +215,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
   int i=0;
 
-  while (PNT[i]!=NULL)
+  for (i=0;i<PNT_BUF;i++)
   {
     if (PNT[i]->timer>0) 
       {
@@ -226,7 +226,6 @@ void SysTick_Handler(void)
             PNT[i]=NULL;
           }
       }
-    i++;
   }
 
   if (SysTickDelay != 0) {SysTickDelay--;} 

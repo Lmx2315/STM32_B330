@@ -267,12 +267,16 @@ POINTER  POINTER_ADR_REQ;              // 15  флаг запроса адреса от слейва на б
 POINTER  POINTER_ETHERNET_RERUN;       // 16  флаг по которому отсылается команда для переконфигурирования маков ячеек 072
 POINTER  POINTER_RESET_072_0;          // 17  флаг устанавливающий ресет для кассет 072
 POINTER  POINTER_RESET_072_1;          // 18  флаг снимающий ресет для кассет 072    
-POINTER  POINTER_CHECK_RESET_072;      // 19  флаг проверяющий что произошёл успешный ресет кассеты 072       
+POINTER  POINTER_CHECK_RESET_072;      // 19  флаг проверяющий что произошёл успешный ресет кассеты 072  
+POINTER  POINTER_LED_TEST0;            // 20  
+POINTER  POINTER_LED_TEST1;            // 21 
+POINTER  POINTER_LED_TEST2;            // 22
+POINTER  POINTER_LED_TEST3;            // 23     
 
 u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
 u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
 u32 TIMER_TIMEOUT=0;        //таймер таймаута ожидания ответов
-
+u8 FLAG_LED_TEST=0;
 u8 SCH_TST1=0;//счётчик числа попыток
 u8 SCH_TST2=0;
 u8 SCH_TST3=0;
@@ -280,6 +284,8 @@ int index_ch;
 float TMP_f=0;
 u8 FLAG_CMD=0;
 u8 DAT_REQ[BUF_DATA_SZ];//транспортный массив
+SYS_STATE_072 B072[8];  //массив структур состояний 072 блока
+u16 TEMP_MAX=4500;//максимально допустимая температура 50 град
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -3901,7 +3907,18 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			TCA_WR(data);//выполняем команду
-		} else    			
+		} else  
+		if (id->CMD_TYPE[i]==CMD_LED_TEST)//команда управления светодиодами на лицевой панели
+		{
+            FLAG_CMD=1;
+			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
+			idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
+			idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+			
+			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
+			FUNC_FLAG_UP (&POINTER_LED_TEST0,10);
+		} else  			
 		if (id->CMD_TYPE[i]==CMD_NUMB_BLOCK_WR)//команда управления светодиодами на лицевой панели
 		{
             FLAG_CMD=1;
@@ -4135,13 +4152,74 @@ static u32 z0;
 
 if (TIMER_LS>2000) {LED_LS=2;}
 
-z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
-				((LED_OFCH     &3)<<21)+
-				((LED_SINHR    &3)<<18)+
-				((LED_LS       &3)<<16)+
-				((LED_ISPR_J330&3)<<14)+
-				((LED_OTKL_AC  &1)<<12)+
-				((LED_TEMP     &3)<<8);
+if (FLAG_LED_TEST==0)
+	{
+	z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
+					((LED_OFCH     &3)<<21)+
+					((LED_SINHR    &3)<<18)+
+					((LED_LS       &3)<<16)+
+					((LED_ISPR_J330&3)<<14)+
+					((LED_OTKL_AC  &1)<<12)+
+					((LED_TEMP     &3)<<8);	
+	} else
+if (FLAG_LED_TEST==1)
+	{
+		LED_ISPRAV_AC=0;
+		LED_PROGR    =0;
+		LED_OFCH     =0;
+		LED_SINHR    =0;
+		LED_LS       =0;
+		LED_ISPR_J330=0;
+		LED_OTKL_AC  =0;
+		LED_TEMP     =0;
+	z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
+					((LED_OFCH     &3)<<21)+
+					((LED_SINHR    &3)<<18)+
+					((LED_LS       &3)<<16)+
+					((LED_ISPR_J330&3)<<14)+
+					((LED_OTKL_AC  &1)<<12)+
+					((LED_TEMP     &3)<<8);
+		
+	}else
+if (FLAG_LED_TEST==2)
+	{
+		LED_ISPRAV_AC=1;
+		LED_PROGR    =1;
+		LED_OFCH     =1;
+		LED_SINHR    =1;
+		LED_LS       =1;
+		LED_ISPR_J330=1;
+		LED_OTKL_AC  =1;
+		LED_TEMP     =1;
+	z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
+					((LED_OFCH     &3)<<21)+
+					((LED_SINHR    &3)<<18)+
+					((LED_LS       &3)<<16)+
+					((LED_ISPR_J330&3)<<14)+
+					((LED_OTKL_AC  &1)<<12)+
+					((LED_TEMP     &3)<<8);
+		
+	}else
+if (FLAG_LED_TEST==3)
+	{
+		LED_ISPRAV_AC=2;
+		LED_PROGR    =2;
+		LED_OFCH     =2;
+		LED_SINHR    =2;
+		LED_LS       =2;
+		LED_ISPR_J330=2;
+		LED_OTKL_AC  =2;
+		LED_TEMP     =2;
+	z=LED_ISPRAV_AC+((LED_PROGR    &3)<< 4)+
+					((LED_OFCH     &3)<<21)+
+					((LED_SINHR    &3)<<18)+
+					((LED_LS       &3)<<16)+
+					((LED_ISPR_J330&3)<<14)+
+					((LED_OTKL_AC  &1)<<12)+
+					((LED_TEMP     &3)<<8);
+		
+	}
+
 
 if (START_BP==0)  z=0;
 
@@ -4352,7 +4430,7 @@ void CONTROL_SYS (void)
   }
   
   u8 err=0;
-  if  (B330.TEMP_MAX>5000) err++;
+  if  (B330.TEMP_MAX>TEMP_MAX) err++;
   if ((B330.I    >2500)&&(B330.I    !=4294967295))    err++;
   if  (B330.U_min<1100)    err++;
   if ((B330.U_max>1250)&&(B330.U_max!=4294967295))    err++;
@@ -4378,12 +4456,14 @@ void CONTROL_SYS (void)
   u_out("B330.FLAG_1HZ:",B330.FLAG_1HZ);
 */
   if (err!=0) B330.STATUS_OK=0; else B330.STATUS_OK=1;
+  if (B330.STATUS_OK==1) LED_ISPR_J330=1; else LED_ISPR_J330=2;
   //u_out("B330.STATUS_OK:",B330.STATUS_OK);
 }
 
 void ALARM_SYS_TEMP (void)  
 {
-	u8 var=0;
+	u16 var=0;
+	int tmp=TEMP_MAX/100;
 	if (LM1.TEMP>LM1.TEMP_max) var=var|(1<<0);
 	if (LM2.TEMP>LM2.TEMP_max) var=var|(1<<1);
 	if (LM3.TEMP>LM3.TEMP_max) var=var|(1<<2);
@@ -4392,6 +4472,15 @@ void ALARM_SYS_TEMP (void)
 	if (LM6.TEMP>LM6.TEMP_max) var=var|(1<<5);
 	if (LM7.TEMP>LM7.TEMP_max) var=var|(1<<6);
 	if (LM8.TEMP>LM8.TEMP_max) var=var|(1<<7);
+	
+	if ((B072[0].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<< 8);
+	if ((B072[1].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<< 9);
+	if ((B072[2].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<10);
+	if ((B072[3].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<11);
+	if ((B072[4].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<12);
+	if ((B072[5].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<13);
+	if ((B072[6].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<14);
+	if ((B072[7].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<15);
 	
 	if (var!=0) LED_TEMP=2; else LED_TEMP=1; 
 }
@@ -4549,21 +4638,25 @@ void CMD_MAC_RECONF ()
 }
 
 //считываем состояние с блоко 072 по бекплейну spi
-u64 BP_072_READ (u8 adr)
+SYS_STATE_072 BP_072_READ (u8 adr)
 {
   u8  tmp0;
   u64 tmp1;
-  u32 x0;
-  u32 x1;
+  SYS_STATE_072 tmp2;
+  
   tmp0=adr;
   if (tmp0==8) tmp0=0;          //поправка для 8-го адресного места на шине бекплейна!
       tmp1=SPI_BP64_READ (tmp0);//считываем код из кассеты
-  x0=tmp1;
-  x1=tmp1>>32;
-//  u_out("072:",adr);
-//  x_out("x0 :",x0);
-//  x_out("x1 :",x1);
-return tmp1;
+
+  tmp2.TEMP     = tmp1     &0xffff;
+  tmp2.REF      =(tmp1>>16)&0xff;
+  tmp2.SYNC_1HZ =(tmp1>>24)&0xff;
+  tmp2.ADC_0    =(tmp1>>32)&0xff;
+  tmp2.ADC_1    =(tmp1>>40)&0xff;
+  tmp2.DAC_0    =(tmp1>>48)&0xff;
+  tmp2.DAC_1    =(tmp1>>56)&0xff;
+
+return tmp2;
 }
 
 //запускает отложенные задачи 
@@ -4578,7 +4671,7 @@ void DISPATCHER (u32 timer)
         Transf("ON RESET for 072.\r\n");
         RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,200);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,10);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
@@ -4586,7 +4679,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
         RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,5000);//сбор адресов с устройств на бекплейне
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
@@ -4604,7 +4697,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("Идёт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
-        FUNC_FLAG_UP (&POINTER_ADR_REQ,1500);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
+        FUNC_FLAG_UP (&POINTER_ADR_REQ,1100);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определения их количества
         return;
       } else
       if (FLAG_DWN(&POINTER_ADR_REQ))
@@ -4769,7 +4862,41 @@ void DISPATCHER (u32 timer)
 
         MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_JTAG);//готовим квитанцию серверу по результатам теста
         return;
-      } 	 
+      } if (FLAG_DWN(&POINTER_LED_TEST0))
+      {
+        Transf("Cветодиоды:0\r\n");
+		FLAG_LED_TEST=1;
+        FUNC_FLAG_UP (&POINTER_LED_TEST1,2000);
+        return;
+      } else
+		if (FLAG_DWN(&POINTER_LED_TEST1))
+      {
+        Transf("Cветодиоды:1\r\n");
+		FLAG_LED_TEST=2;
+        FUNC_FLAG_UP (&POINTER_LED_TEST2,2000);
+        return;
+      } else
+		if (FLAG_DWN(&POINTER_LED_TEST2))
+      {
+        Transf("Cветодиоды:2\r\n");
+		FLAG_LED_TEST=3;
+        FUNC_FLAG_UP (&POINTER_LED_TEST3,2000);
+        return;
+      } else
+		if (FLAG_DWN(&POINTER_LED_TEST3))
+      {
+		Transf("Cветодиоды:НОРМА\r\n");
+		LED_ISPRAV_AC=1;
+		LED_PROGR    =2;
+		LED_OFCH     =1;
+		LED_SINHR    =1;
+		LED_LS       =2;
+		LED_ISPR_J330=1;
+		LED_OTKL_AC  =1;
+		LED_TEMP	 =1;
+		FLAG_LED_TEST=0;
+        return;
+      } 		  
 
   }
 
@@ -4997,15 +5124,27 @@ u64 SERIAL_NUMBER ()
 
 void SYS_072_STATE (void)
 {
-			            BP_072_READ (1);//кассета мастер		
-  if (NUMBER_OF_B072>0) BP_072_READ (ADR_SLAVE[1]);//кассета слев
-  if (NUMBER_OF_B072>1) BP_072_READ (ADR_SLAVE[2]);//кассета слев
-  if (NUMBER_OF_B072>2) BP_072_READ (ADR_SLAVE[3]);//кассета слев
-  if (NUMBER_OF_B072>3) BP_072_READ (ADR_SLAVE[4]);//кассета слев
-  if (NUMBER_OF_B072>4) BP_072_READ (ADR_SLAVE[5]);//кассета слев
-  if (NUMBER_OF_B072>5) BP_072_READ (ADR_SLAVE[6]);//кассета слев
-  if (NUMBER_OF_B072>6) BP_072_READ (ADR_SLAVE[7]);//кассета слев
-  if (NUMBER_OF_B072>7) BP_072_READ (ADR_SLAVE[8]);//кассета слев
+	int i=0;
+	int tmp=TEMP_MAX/100;
+			            B072[0]=BP_072_READ (1);//кассета мастер		
+  if (NUMBER_OF_B072>0) B072[1]=BP_072_READ (ADR_SLAVE[1]);//кассета слев
+  if (NUMBER_OF_B072>1) B072[2]=BP_072_READ (ADR_SLAVE[2]);//кассета слев
+  if (NUMBER_OF_B072>2) B072[3]=BP_072_READ (ADR_SLAVE[3]);//кассета слев
+  if (NUMBER_OF_B072>3) B072[4]=BP_072_READ (ADR_SLAVE[4]);//кассета слев
+  if (NUMBER_OF_B072>4) B072[5]=BP_072_READ (ADR_SLAVE[5]);//кассета слев
+  if (NUMBER_OF_B072>5) B072[6]=BP_072_READ (ADR_SLAVE[6]);//кассета слев
+  if (NUMBER_OF_B072>6) B072[7]=BP_072_READ (ADR_SLAVE[7]);//кассета слев
+  
+  if (B072[NUMBER_OF_B072-1].REF==1) LED_OFCH=1; else LED_OFCH=2;
+  
+  if (LED_TEMP==2)
+  {
+	  for (i=0;i<8;i++) 
+		  if (B072[i].TEMP>tmp) 
+		  {
+			nu_out("B072[",i); u_out("]:",B072[i].TEMP);
+		  }
+  }
 }
 
 int main(void)
