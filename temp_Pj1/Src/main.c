@@ -1668,6 +1668,14 @@ void SPI_BP_WRITE (u32 adr,u32 data)
   FPGA_wSPI (32,adr,data);
 }
 
+u32 SPI_BP_READ_TEST (u32 adr)//констрольное считывание из первого регистра контрольного слова 0xdeedbeef
+{
+  u32 tmp0;
+  adr=(adr<<4)|0x1;
+  tmp0=FPGA_rSPI (32,adr);
+  return tmp0;
+}
+
 u32 SPI_BP_READ (u32 adr)
 {
   u32 tmp0;
@@ -4623,12 +4631,25 @@ void SLAVE_COUNT ()
 void req_col (void)
 {
    int i=0;
-  Transf2("~0 REQ_ADR;");//отсылаем запрос 
-  NUMBER_OF_B072=0;//сбрасываем счЄтчик числа блоков
+   u32 tmp0=0;
+   NUMBER_OF_B072=0;//сбрасываем счЄтчик числа блоков
    for (i=0;i<8;i++)
     {
       ADR_SLAVE[i]=0xff;//очищаем массив адресов
     }
+   /*
+  Transf2("~0 REQ_ADR;");//отсылаем запрос 
+	*/
+   for (i=0;i<8;i++)
+    {
+       tmp0=SPI_BP_READ_TEST (i);//считываем код из кассеты
+	   if (tmp0==0xDEEDBEEF) 
+	   {
+		   if (i!=0) ADR_SLAVE[NUMBER_OF_B072]=i; else  ADR_SLAVE[NUMBER_OF_B072]=8;
+		   NUMBER_OF_B072++;
+		}
+    }       
+       
 }
 
 //посылаем команду на переконфигурирование ETH MAC €чеек 072
@@ -4669,7 +4690,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("ON RESET for 072.\r\n");
-        RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
+     //   RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счЄтчик числа блоков
         FUNC_FLAG_UP (&POINTER_RESET_072_1,10);//поднимаем флаг следующей задачи - сн€тие сигнала RESET
         return;
@@ -4678,7 +4699,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
-        RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
+    //    RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
 		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//сбор адресов с устройств на бекплейне
 		return;
       } else
@@ -4697,7 +4718,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("»дЄт сбор адресов!\r\n");
         req_col ();//запрашиваем адреса
-        FUNC_FLAG_UP (&POINTER_ADR_REQ,1100);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определени€ их количества
+        FUNC_FLAG_UP (&POINTER_ADR_REQ,300);//поднимаем флаг следующей задачи - вывод количества блоков 072 в консоль и определени€ их количества
         return;
       } else
       if (FLAG_DWN(&POINTER_ADR_REQ))
