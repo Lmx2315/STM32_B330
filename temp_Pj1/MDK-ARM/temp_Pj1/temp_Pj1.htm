@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\temp_Pj1\temp_Pj1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\temp_Pj1\temp_Pj1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Fri Jun 25 17:19:24 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050106: Last Updated: Tue Jun 29 18:18:07 2021
 <BR><P>
 <H3>Maximum Stack Usage =        520 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -654,7 +654,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[158]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SYS_072_STATE
 </UL>
 
-<P><STRONG><a name="[80]"></a>BP_start</STRONG> (Thumb, 134 bytes, Stack size 16 bytes, main.o(i.BP_start))
+<P><STRONG><a name="[80]"></a>BP_start</STRONG> (Thumb, 144 bytes, Stack size 16 bytes, main.o(i.BP_start))
 <BR><BR>[Stack]<UL><LI>Max Depth = 144<LI>Call Chain = BP_start &rArr; PWR_072 &rArr; HAL_I2C_Master_Transmit &rArr; I2C_MasterRequestWrite &rArr; I2C_WaitOnMasterAddressFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[82]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
@@ -801,6 +801,7 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 280<LI>Call Chain = DISPATCHER &rArr; SETUP_IP1_072 &rArr; SPI_BP_WRITE &rArr; FPGA_wSPI &rArr; spi5send8 &rArr; HAL_SPI_TransmitReceive &rArr; SPI_EndRxTxTransaction &rArr; SPI_WaitFlagStateUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[b1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;jtag_scan
+<LI><a href="#[82]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 <LI><a href="#[b2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xn_out
 <LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;x_out
 <LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;un_out
@@ -1265,6 +1266,7 @@ Global Symbols
 <LI><a href="#[124]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IO
 <LI><a href="#[ce]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_wSPI
 <LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FPGA_rSPI
+<LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DISPATCHER
 <LI><a href="#[80]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;BP_start
 </UL>
 
@@ -1761,7 +1763,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[124]"></a>IO</STRONG> (Thumb, 6336 bytes, Stack size 24 bytes, main.o(i.IO))
+<P><STRONG><a name="[124]"></a>IO</STRONG> (Thumb, 6372 bytes, Stack size 24 bytes, main.o(i.IO))
 <BR><BR>[Stack]<UL><LI>Max Depth = 504<LI>Call Chain = IO &rArr; LM_TEMP &rArr; okrug &rArr; __hardfp_pow &rArr; __kernel_poly &rArr; __aeabi_dmul &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[b1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;jtag_scan

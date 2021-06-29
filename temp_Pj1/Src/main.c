@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x250620211109;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x290620211817;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -130,6 +130,7 @@ char  sym;
 char flag;
 char    NB;
 char Adress;  //
+u8   Adress_REZ='0';
 char packet_sum;
 char crc,comanda;
       
@@ -271,7 +272,8 @@ POINTER  POINTER_CHECK_RESET_072;      // 19  флаг проверяющий что произошёл усп
 POINTER  POINTER_LED_TEST0;            // 20  
 POINTER  POINTER_LED_TEST1;            // 21 
 POINTER  POINTER_LED_TEST2;            // 22
-POINTER  POINTER_LED_TEST3;            // 23     
+POINTER  POINTER_LED_TEST3;            // 23    
+POINTER  POINTER_RESET;                // 24  
 
 u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
 u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
@@ -1833,6 +1835,7 @@ if (packet_ok==1u)
   {    
       if (InOut[0]==0x7e)   crc_ok=crc_ok|0x1;   // проверка первого условия пакета - начало пакета
       if (InOut[1]==Adress) crc_ok=crc_ok|0x2;   // проверка второго условия пакета - адресат назначения
+	  if (InOut[1]==Adress_REZ) crc_ok=crc_ok|0x2;   // проверка второго условия пакета - адресат назначения
  
 if (crc_ok==0x3)  //обработка команд адресатом которых является хозяин 
 {
@@ -2539,6 +2542,7 @@ void BP_start (u16 a,u8 pwr)
 		PWR_072    (255);//выключаем каналы питания и сбрасываем состояния переменных говорящих о каналах питания - в ноль
 		UPR_HDS_MK (1);	
 		TIMER_BP_PWM=1000;
+		RESET_072(0); //ставим ресет
 		if (flag==0) {Transf("Выключаем ПИТАНИЕ!\r\n");flag=1;}
 	} else
 	if ((TIMER_BP_PWM==0)&&(flag==1))
@@ -2549,7 +2553,7 @@ void BP_start (u16 a,u8 pwr)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		PWR_072(pwr); //подаём питание на все каналы!!! - без этого не работает i2c			
 		ENABLE_LM25056_MK(1); //включаем все м/мы LM
-        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,4000);//ставим отложенную задачу для опроса кассет на бекплейне
+        FUNC_FLAG_UP (&POINTER_RESET,5000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -4640,12 +4644,14 @@ void req_col (void)
    /*
   Transf2("~0 REQ_ADR;");//отсылаем запрос 
 	*/
-   for (i=0;i<8;i++)
+   for (i=1;i<9;i++)
     {
-       tmp0=SPI_BP_READ_TEST (i);//считываем код из кассеты
+       if (i!=8) tmp0=SPI_BP_READ_TEST (i);//считываем код из кассеты
+	   else      tmp0=SPI_BP_READ_TEST (0);
+	   
 	   if (tmp0==0xDEEDBEEF) 
 	   {
-		   if (i!=0) ADR_SLAVE[NUMBER_OF_B072]=i; else  ADR_SLAVE[NUMBER_OF_B072]=8;
+		   ADR_SLAVE[NUMBER_OF_B072]=i; 
 		   NUMBER_OF_B072++;
 		}
     }       
@@ -4676,31 +4682,47 @@ SYS_STATE_072 BP_072_READ (u8 adr)
   tmp2.ADC_1    =(tmp1>>40)&0xff;
   tmp2.DAC_0    =(tmp1>>48)&0xff;
   tmp2.DAC_1    =(tmp1>>56)&0xff;
+  
+ /* 
+  Transf("-----------\r\n");
+  un_out("B072[",adr);Transf("]:\r\n");
+  u_out("TEMP:", tmp2.TEMP);
+  u_out("REF:", tmp2.REF);
+  u_out("SYNC_1HZ:", tmp2.SYNC_1HZ);
+  */
 
 return tmp2;
 }
 
 //запускает отложенные задачи 
-void DISPATCHER (u32 timer)
+void DISPATCHER (u32 timer) 
 {
 	u32 tmp0=0;
 	int i=0;
 
+	  if (FLAG_DWN(&POINTER_RESET)) //снимаем ресет
+      {
+        RESET_072(1);//
+		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
+        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,7000);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        return;
+      } else
       if (FLAG_DWN(&POINTER_RESET_072_0))
       {
         TIME_cons ();
         Transf("ON RESET for 072.\r\n");
-     //   RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
+        RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,10);//поднимаем флаг следующей задачи - снятие сигнала RESET
+		FLAG_ASQ_TEST_RESET=0;
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,100);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
       {
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
-    //    RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//сбор адресов с устройств на бекплейне
+        RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,7000);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
@@ -4709,6 +4731,7 @@ void DISPATCHER (u32 timer)
         Transf("Проверка сигнала RESET для 072.\r\n");
 		u_out("Количество блоков 072 на бекплейне:",NUMBER_OF_B072);
         if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
+		else FLAG_ASQ_TEST_RESET=0;
 		FUNC_FLAG_UP (&POINTER_MASTER_IP0_SETUP,200);
         MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
         return;
@@ -5148,13 +5171,13 @@ void SYS_072_STATE (void)
 	int i=0;
 	int tmp=TEMP_MAX/100;
 			            B072[0]=BP_072_READ (1);//кассета мастер		
-  if (NUMBER_OF_B072>0) B072[1]=BP_072_READ (ADR_SLAVE[1]);//кассета слев
-  if (NUMBER_OF_B072>1) B072[2]=BP_072_READ (ADR_SLAVE[2]);//кассета слев
-  if (NUMBER_OF_B072>2) B072[3]=BP_072_READ (ADR_SLAVE[3]);//кассета слев
-  if (NUMBER_OF_B072>3) B072[4]=BP_072_READ (ADR_SLAVE[4]);//кассета слев
-  if (NUMBER_OF_B072>4) B072[5]=BP_072_READ (ADR_SLAVE[5]);//кассета слев
-  if (NUMBER_OF_B072>5) B072[6]=BP_072_READ (ADR_SLAVE[6]);//кассета слев
-  if (NUMBER_OF_B072>6) B072[7]=BP_072_READ (ADR_SLAVE[7]);//кассета слев
+  if (NUMBER_OF_B072>1) B072[1]=BP_072_READ (ADR_SLAVE[1]);//кассета слев
+  if (NUMBER_OF_B072>2) B072[2]=BP_072_READ (ADR_SLAVE[2]);//кассета слев
+  if (NUMBER_OF_B072>3) B072[3]=BP_072_READ (ADR_SLAVE[3]);//кассета слев
+  if (NUMBER_OF_B072>4) B072[4]=BP_072_READ (ADR_SLAVE[4]);//кассета слев
+  if (NUMBER_OF_B072>5) B072[5]=BP_072_READ (ADR_SLAVE[5]);//кассета слев
+  if (NUMBER_OF_B072>6) B072[6]=BP_072_READ (ADR_SLAVE[6]);//кассета слев
+  if (NUMBER_OF_B072>7) B072[7]=BP_072_READ (ADR_SLAVE[7]);//кассета слев
   
   if (B072[NUMBER_OF_B072-1].REF==1) LED_OFCH=1; else LED_OFCH=2;
   
@@ -5172,7 +5195,7 @@ int main(void)
 {
 	int i=0;
   /* USER CODE BEGIN 1 */
-  Adress=0x30; //адресс кассеты 
+  Adress='b'; //адресс кассеты 
 
   for (i=0;i<PNT_BUF;i++) PNT[i]=NULL;//обнуляем ассив указателей
   /* USER CODE END 1 */
@@ -5209,7 +5232,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 //  Delay(1000);
-	RESET_072(0);
+	RESET_072(1);
 //------SETUP----------
 LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
 LM2.TEMP_max=5000;
@@ -5277,9 +5300,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 //           Для сдачи по ТУ
 
 //  TCA_WR(255);//зажигаем все светодиоды на лицевой панели
-//-------------------------------------
-  RESET_072(1);//снимаем ресет 072 кассет
- 
+//------------------------------------- 
   B330.B330_NUMBER=SERIAL_NUMBER ();
   CorrI_read  ();  //загружаем поправочные коэффициенты для коррекции измерений тока
   CorrU_read  ();  //загружаем поправочные коэффициенты для коррекции измерений напряжения
@@ -5295,6 +5316,8 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
   LED_ISPR_J330=1;
   LED_OTKL_AC  =1;
   LED_TEMP	   =1;
+  
+  RESET_072(0);//снимаем ресет 072 кассет
 
 
   while (1)
