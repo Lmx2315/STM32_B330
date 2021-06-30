@@ -135,49 +135,17 @@ compiling main.c...
         u8  D[4];
 ../Src/main.c(4149): warning:  #177-D: variable "val" was declared but never referenced
         u8 val=0;
-../Src/main.c(4515): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcpy(a,"~0 setup_IP0:"); 
-../Src/main.c(4518): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,strng);
-../Src/main.c(4519): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,";\r\n");
-../Src/main.c(4523): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf (a);
-../Src/main.c(4525): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf2(a);
-../Src/main.c(4538): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcpy(a,"~0 setup_IP1:"); 
-../Src/main.c(4541): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,strng);
-../Src/main.c(4542): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,";\r\n");
-../Src/main.c(4545): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf (a);
-../Src/main.c(4547): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf2(a);
-../Src/main.c(4560): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcpy(a,"~0 dest_IP0:"); 
-../Src/main.c(4563): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,strng);
-../Src/main.c(4564): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,";\r\n");
-../Src/main.c(4567): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf (a);
-../Src/main.c(4569): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf2(a);
-../Src/main.c(4582): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcpy(a,"~0 dest_IP1:"); 
-../Src/main.c(4585): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,strng);
-../Src/main.c(4586): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "char *restrict"
-     strcat(a,";\r\n");
-../Src/main.c(4589): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf (a);
-../Src/main.c(4591): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
-     Transf2(a);
-../Src/main.c(4886): warning:  #223-D: function "jtag_scan" declared implicitly
+../Src/main.c(4511): warning:  #550-D: variable "a" was set but never used
+    u8 a[64];
+../Src/main.c(4533): warning:  #550-D: variable "a" was set but never used
+    u8 a[64];
+../Src/main.c(4554): warning:  #550-D: variable "a" was set but never used
+    u8 a[64];
+../Src/main.c(4575): warning:  #550-D: variable "a" was set but never used
+    u8 a[64];
+../Src/main.c(4882): warning:  #223-D: function "jtag_scan" declared implicitly
           tmp0=jtag_scan(NULL,0);
-../Src/main.c(5295): warning:  #223-D: function "RECEIVE_udp" declared implicitly
+../Src/main.c(5291): warning:  #223-D: function "RECEIVE_udp" declared implicitly
    RECEIVE_udp(0, 3001,1); 
 ../Src/main.c(915): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
   static void MX_TIM4_Init(void)
@@ -185,11 +153,11 @@ compiling main.c...
   static void MX_SPI2_Init(void)
 ../Src/main.c(755): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
   static void MX_USART6_UART_Init(void)
-../Src/main.c: 79 warnings, 0 errors
+../Src/main.c: 63 warnings, 0 errors
 linking...
-Program Size: Code=72428 RO-data=2032 RW-data=776 ZI-data=78448  
+Program Size: Code=71892 RO-data=2032 RW-data=776 ZI-data=78448  
 FromELF: creating hex file...
-".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 79 Warning(s).
+".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 63 Warning(s).
 
 <h2>Software Packages used:</h2>
 

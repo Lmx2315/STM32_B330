@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x290620211817;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x300620211827;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -2553,7 +2553,7 @@ void BP_start (u16 a,u8 pwr)
 		Transf("Включаем ПИТАНИЕ!\r\n");
 		PWR_072(pwr); //подаём питание на все каналы!!! - без этого не работает i2c			
 		ENABLE_LM25056_MK(1); //включаем все м/мы LM
-        FUNC_FLAG_UP (&POINTER_RESET,5000);//ставим отложенную задачу для опроса кассет на бекплейне
+        FUNC_FLAG_UP (&POINTER_RESET,3000);//ставим отложенную задачу для опроса кассет на бекплейне
 	}	
 }  
   
@@ -4512,18 +4512,17 @@ void SETUP_IP0_072 (u8 adr,u32 ip)
   u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
 
+/*
    strcpy(a,"~0 setup_IP0:"); 
    a[1]= adr+0x30;
    sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");
-
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
-   
+*/   
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
    SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
@@ -4534,18 +4533,17 @@ void SETUP_IP1_072 (u8 adr,u32 ip)
   u8 a[64];
   u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
-
+/*
    strcpy(a,"~0 setup_IP1:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
-   
+*/   
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
    SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
@@ -4556,18 +4554,17 @@ void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
   u8 a[64];
   u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
-
+/*
    strcpy(a,"~0 dest_IP0:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
-   
+  */ 
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
    SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
@@ -4578,18 +4575,17 @@ void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
   u8 a[64];
   u8 tmp0;
   for (int i=0;i<64;i++) a[i]=0;
-
+/*
    strcpy(a,"~0 dest_IP1:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
    strcat(a,strng);
    strcat(a,";\r\n");
-
    Transf ("Отправляем на бекплейн:");
    Transf (a);
    Transf ("\r\n");
    Transf2(a);
-   
+ */  
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
    SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
@@ -4704,7 +4700,7 @@ void DISPATCHER (u32 timer)
       {
         RESET_072(1);//
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,7000);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
       if (FLAG_DWN(&POINTER_RESET_072_0))
@@ -4722,7 +4718,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("OFF RESET for 072.\r\n");
         RESET_072(1);//снимаем сигнал RESET на шину бекплейна		
-		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,7000);//сбор адресов с устройств на бекплейне
+		FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//сбор адресов с устройств на бекплейне
 		return;
       } else
 	  if (FLAG_DWN(&POINTER_CHECK_RESET_072))
