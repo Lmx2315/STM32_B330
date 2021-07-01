@@ -308,7 +308,7 @@ typedef unsigned long uint32;
 #define READ_STATUS		0x5
 #define READ_BYTES		0x3    
 #define READ_ID		  	0xab	  
-#define FAST_READ		  0x0b    
+#define FAST_READ	    0x0b    
 #define WRITE_STATUS	0x01
 #define WRITE_BYTES		0x02	 
 #define ERASE_BULK		0xc7
@@ -335,14 +335,14 @@ typedef unsigned long uint32;
 #define RX_BUFFER_SIZE2 64u
 #define Bufer_size2   1024u   //16384
 
-#define buf_IO        32u 
-#define buf_Word      32u 
+#define buf_IO        64u 
+#define buf_Word      64u 
 #define buf_DATA_Word 200u 
 #define BUFFER_SR     200u
 #define BUF_STR       64
 #define MAX_PL        157u
 
-#define BUF_DATA_SZ   128
+#define BUF_DATA_SZ   256
 
 //------------------------------------------------
 
@@ -443,9 +443,9 @@ typedef unsigned long uint32;
 #define CMD_RESET_072       205  //команда установки сигнала ресет или проведения теста для сигнала ресет (зависит от данных команды)
 #define CMD_LED_TEST        206 
 //------------------------------------------------------------------------ 
-#define SIZE_SERVER  4096  //размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
-#define SIZE_ID        64   //размер реестра  
-#define quantity_CMD   64   //максимальное количество команд и количества квитанций!!!
+#define SIZE_SERVER  8192  //размер буфера "Хранилище"  тут хранятся данные команды пришедших пакетов сами команды хранятся в реестре
+#define SIZE_ID        128   //размер реестра  
+#define quantity_CMD   128   //максимальное количество команд и количества квитанций!!!
 #define quantity_DATA  128  //максимальная длинна данных
 #define quantity_SENDER 1   //максимальное количество адресатов
 //-----------------------------------------------------------------
@@ -635,8 +635,6 @@ void Set_network(void);
 void MSG_SHOW (void);
 u32 SEND_UDP_MSG (void);
 u8 DS4520_read (void);
-void SETUP_IP0_072 (u8 ,u32);
-void SETUP_IP1_072 (u8 ,u32);
 void REQ_VERSIYA (void);
 void answer_translated (u32 );
 void req_col (void);
@@ -661,6 +659,11 @@ void Console_corr(void);
 void TIME_cons (void);
 void DAT_CORR_REQ_FORM (void);
 void CorrIU_write (void);
+void SETUP_IP0_072 (u8 ,u32);
+void SETUP_IP1_072 (u8 ,u32);
+void SETUP_DEST_IP0_072 (u8,u32);
+void SETUP_DEST_IP1_072 (u8,u32);
+u64 SERIAL_NUMBER (void);
 //-------------JTAG--------------
 void JTAG_SCAN (void);
   u8 SCAN_N    (void);

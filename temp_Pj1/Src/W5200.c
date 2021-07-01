@@ -2266,7 +2266,7 @@ u32 SEND_UDP_MSG (void)
 	  if (INVOICE[i].MSG.Num_cmd_in_msg>0) 
 	  {
 		 error=TX_MSG_BUFF (&INVOICE[i],TX_BUF,TX_MAX_BUF_SIZE);//заполняем транспортный массив
-		 SEND_udp(0, 3001,destip_UDP,SERVER_DEST_PORT);//отправляем квитанцию по UDP	
+		 if (error==0) SEND_udp(0, 3001,destip_UDP,SERVER_DEST_PORT);//отправляем квитанцию по UDP	
 		 //x_out("IP_dest  <revers byte`s!>:",destip_UDP);		
 	  }
 	}

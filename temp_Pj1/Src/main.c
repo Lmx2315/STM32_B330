@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x300620211827;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x010720211508;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -301,6 +301,7 @@ u16 TEMP_MAX=4500;//максимально допустимая температура 50 град
 
 u64 ADRES_SENDER_CMD=0; //тут храним адрес компьютера управления, кто запрашивает у нас квитанции
 u8 FLAG_ADRES_SENDER_CMD=0;//флаг того что есть куда отправлять квитанции
+u8 FLAG_REQ_STATUS=0;
 //-----------------------------------------------------------------------------
 //                       JTAG
 #include "jtagtap.h"
@@ -2476,7 +2477,6 @@ void LED (void)
 
 volatile  u32 adc_cntl=0;
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
-
 {
 	adc_cntl++;
 //	HAL_ADC_Start_IT(hadc1);
@@ -2681,7 +2681,7 @@ if (!state)
 u8 LM_MFR_MODEL (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t a[32];
+	 uint8_t a[8];
 	 uint16_t Size2=8;
 	 uint8_t state=1;
 	 uint8_t c[2];
@@ -2776,7 +2776,7 @@ void SYS_INFO (u8 a)
 u8 LM_MFR_ID (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t a[32];
+	 uint8_t a[4];
 	 uint16_t Size2=3;
 	 uint8_t state=1;
 	 uint8_t v=0;
@@ -2880,7 +2880,7 @@ float okrug(float chislo, long znaki)
 int LM_TEMP (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t  a[32];
+	 uint8_t  a[8];
 	 uint8_t  c[1];
 	 uint16_t Size=2;//размер считываемого массива
 	 uint8_t state=1;
@@ -2951,7 +2951,7 @@ int LM_TEMP (u8 z)
 int LM_v (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t  a[32];
+	 uint8_t  a[8];
 	 uint8_t  c[1];
 	 uint16_t Size=2;//размер считываемого массива
 	 uint8_t state=1;
@@ -3025,7 +3025,7 @@ int LM_v (u8 z)
 int LM_aux_u (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t  a[32];
+	 uint8_t  a[8];
 	 uint8_t  c[1];
 	 uint16_t Size=2;//размер считываемого массива
 	 uint8_t state=1;
@@ -3080,7 +3080,7 @@ int LM_aux_u (u8 z)
 int LM_in_i (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t  a[32];
+	 uint8_t  a[8];
 	 uint8_t  c[1];
 	 uint16_t Size=2;//размер считываемого массива
 	 uint8_t state=1;
@@ -3135,7 +3135,7 @@ int LM_in_i (u8 z)
 int LM_in_p (u8 z)
 {
 	 uint16_t DevAddress=0x00;//
-	 uint8_t  a[32];
+	 uint8_t  a[8];
 	 uint8_t  c[1];
 	 uint16_t Size=2;//размер считываемого массива
 	 uint8_t state=1;
@@ -3235,7 +3235,7 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
   
   u64 ADR=ADRES_SENDER_CMD;
   u32 data=0;
-  u8 D[4];
+//u8 D[4];
         
  if (msg_type==MSG_REQ_TEST_485)
  {
@@ -3317,7 +3317,7 @@ void ARR_Z ()
   DATA_TR[n++]=B330.WORK_TIME>>16;	//33
   DATA_TR[n++]=B330.WORK_TIME>> 8;	//34
   DATA_TR[n++]=B330.WORK_TIME>> 0;  //35
-  DATA_TR[n++]=B330.STATUS_OK; 		  //36
+  DATA_TR[n++]=B330.STATUS_OK; 		//36
 }
 
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
@@ -3909,11 +3909,12 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 		if (id->CMD_TYPE[i]==CMD_STATUS)//команда запроса состояни
 		{
 			//нет данных у команды
+		//	Transf("Команда:CMD_STATUS!\r\n");
             FLAG_CMD=1;
 			ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда
 			ADRES_SENDER_CMD=ADR;
-			//------------------------------------
-			//SYS_INFO_SEND_UDP ();
+		//	SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);
+			FLAG_REQ_STATUS=1;
 		}	else		
 		if (id->CMD_TYPE[i]==CMD_LED)//команда управления светодиодами на лицевой панели
 		{
@@ -3938,7 +3939,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			FUNC_FLAG_UP (&POINTER_LED_TEST0,10);
 		} else  			
-		if (id->CMD_TYPE[i]==CMD_NUMB_BLOCK_WR)//команда управления светодиодами на лицевой панели
+		if (id->CMD_TYPE[i]==CMD_NUMB_BLOCK_WR)//команда
 		{
             FLAG_CMD=1;
 			idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
@@ -3949,6 +3950,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
 			
 			 SERIAL_NUMBER_WR (data);//выполняем команду
+			 B330.B330_NUMBER=SERIAL_NUMBER ();
 		} else			
 		if (id->CMD_TYPE[i]==CMD_12V)//команда включения источника +12V
 		{
@@ -4118,7 +4120,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			&INVOICE[ADR],//структура квитанций	
 			i,	 		     	//индекс в реестре
 			MSG_Corr_REQ,	//тип сообщения
-			64,		 		    //объём данных сообщения в байтах
+			64,		 		//объём данных сообщения в байтах
 			DAT_REQ,	    //данные сообщения - массив данных
 			TIME_SYS	  	//время составления квитанции
 			);
@@ -4154,6 +4156,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     {
       FLAG_CMD=0;
 	  //------------------------------ 
+	  /*
       ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);//ищем порядковый номер отправителя в структуре отправителей, если его там нет  - то заносим туда     
 			ERROR_CMD_MSG ( //заполняем квитанцию о выполнении команды
 			id,			        //указатель на реестр
@@ -4163,6 +4166,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			0,				      //данные квитанции
 			TIME_SYS	      //текущее системное время 
 			);	
+		*/	
 			SERV_ID_DEL (id,i);//удаляем команду из реестра
     //------------------------------
     }
@@ -4485,7 +4489,7 @@ void CONTROL_SYS (void)
   if  (B330.P    >30000)   err++;
   if  (B330.FLAG_1HZ==0)   err++;
   
- /* 
+ /*
   Transf("\r\n");
   u_out("B330.CH[0]:",B330.CH[0]);
   u_out("B330.CH[1]:",B330.CH[1]);
@@ -4544,11 +4548,10 @@ void UART_CNTR (UART_HandleTypeDef *huart)
 
 void SETUP_IP0_072 (u8 adr,u32 ip)
 {
-  u8 a[64];
   u8 tmp0;
+/* 
+  u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
-
-/*
    strcpy(a,"~0 setup_IP0:"); 
    a[1]= adr+0x30;
    sprintf (strng,"%d",ip);
@@ -4566,10 +4569,11 @@ void SETUP_IP0_072 (u8 adr,u32 ip)
 
 void SETUP_IP1_072 (u8 adr,u32 ip)
 {
-  u8 a[64];
+
   u8 tmp0;
+/*  
+  u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
-/*
    strcpy(a,"~0 setup_IP1:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
@@ -4587,10 +4591,11 @@ void SETUP_IP1_072 (u8 adr,u32 ip)
 
 void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
 {
-  u8 a[64];
+
   u8 tmp0;
+/*  
+  u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
-/*
    strcpy(a,"~0 dest_IP0:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
@@ -4608,10 +4613,11 @@ void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
 
 void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
 {
-  u8 a[64];
+
   u8 tmp0;
+ /* 
+  u8 a[64];
   for (int i=0;i<64;i++) a[i]=0;
-/*
    strcpy(a,"~0 dest_IP1:"); 
    a[1]= adr+0x30; 
    sprintf (strng,"%d",ip);
@@ -4673,9 +4679,9 @@ void req_col (void)
     {
       ADR_SLAVE[i]=0xff;//очищаем массив адресов
     }
-   /*
-  Transf2("~0 REQ_ADR;");//отсылаем запрос 
-	*/
+  
+//  Transf2("~0 REQ_ADR;");//отсылаем запрос 
+
    for (i=1;i<9;i++)
     {
        if (i!=8) tmp0=SPI_BP_READ_TEST (i);//считываем код из кассеты
@@ -5092,7 +5098,7 @@ void EPCS1_ERASE_ALL(void)
 void SERIAL_NUMBER_WR (u32 data)
 {
 	u8 buf[4];
-  EPCS1_ERASE_SECTOR(SERIAL_ADR_FLASH);//стираем сектор коэффициентов коррекции тока
+  EPCS1_ERASE_SECTOR(SERIAL_ADR_FLASH);//стираем сектор 
 	u_out("Записываем серийный номер:",data);
 	buf[0]=(data>>24)&0xff;
 	buf[1]=(data>>16)&0xff;
@@ -5186,7 +5192,7 @@ void CorrU_read (void)
 } 
 
 //Считывает серийный номер из флешпамяти
-u64 SERIAL_NUMBER ()
+u64 SERIAL_NUMBER (void)
 {
    u8 buf[4];//{}
    int adr=SERIAL_ADR_FLASH;
@@ -5372,17 +5378,21 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	
 	if (EVENT_INT3==1)//контроль секундной метки T1HZ_MK
 	{
-		//Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
 		if (FLAG_T1HZ_MK==0) Transf("ЕСТЬ   СИГНАЛ T1HZ_MK!\r");
-		if (FLAG_ADRES_SENDER_CMD==1) SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);//отсылаем квитанцию о нашем состоянии
-		
-        SYS_072_STATE ();//узнаём состояние 072 блоков
-		
+        FLAG_REQ_STATUS=1;		
+	
 		EVENT_INT3=0;
 		FLAG_T1HZ_MK=1;
 		TIMER_T1HZ_MK=0;
 		TIME_OF_SECOND++;//подсчитываем число секунд с момента включения			
 	}; 
+	
+	if (FLAG_REQ_STATUS==1) //отсылаем квитанцию о нашем состоянии
+	{
+		SYS_072_STATE ();//узнаём состояние 072 блоков	
+		SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);
+		FLAG_REQ_STATUS=0;
+	}
 
     DISPATCHER          (TIMER_TIMEOUT);//выполняет отложенные задачи
 	ALARM_SYS_TEMP      ();//сравниваем измеренную температуру с пороговым значением  

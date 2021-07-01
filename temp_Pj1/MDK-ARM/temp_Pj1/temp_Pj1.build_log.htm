@@ -27,25 +27,25 @@ Project File Date:  06/09/2021
 <h2>Output:</h2>
 Build target 'temp_Pj1'
 compiling main.c...
-../Src/main.c(1229): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1230): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",z);
-../Src/main.c(1231): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1232): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",a);
-../Src/main.c(1242): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1243): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",z);
-../Src/main.c(1244): warning:  #181-D: argument is incompatible with corresponding format string conversion
+../Src/main.c(1245): warning:  #181-D: argument is incompatible with corresponding format string conversion
      sprintf (strng,"%u",a);
-../Src/main.c(1280): warning:  #177-D: variable "k" was declared but never referenced
+../Src/main.c(1281): warning:  #177-D: variable "k" was declared but never referenced
    uint16_t k;
-../Src/main.c(1731): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+../Src/main.c(1732): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
      Transf2(u);
-../Src/main.c(1733): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+../Src/main.c(1734): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
      Transf(u);
-../Src/main.c(1880): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+../Src/main.c(1881): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
          Transf2(Str);
-../Src/main.c(1937): warning:  #223-D: function "TST" declared implicitly
+../Src/main.c(1938): warning:  #223-D: function "TST" declared implicitly
            TST ();
-../Src/main.c(1944): warning:  #223-D: function "jtag_scan" declared implicitly
+../Src/main.c(1945): warning:  #223-D: function "jtag_scan" declared implicitly
            crc_comp=jtag_scan(NULL,crc_comp); 
 ../Src/main.c(2500): warning:  #1035-D: single-precision operand implicitly converted to double-precision
         adc_ch[ 0] = ((float)adcBuffer[0])*3.3/4096*2;
@@ -105,8 +105,6 @@ compiling main.c...
          uint8_t v=0;
 ../Src/main.c(3237): warning:  #177-D: variable "data" was declared but never referenced
     u32 data=0;
-../Src/main.c(3238): warning:  #177-D: variable "D" was declared but never referenced
-    u8 D[4];
 ../Src/main.c(3276): warning:  #177-D: variable "tmp0" was declared but never referenced
     u32 tmp0=0;
 ../Src/main.c(3326): warning:  #177-D: variable "idx0" was declared but never referenced
@@ -133,31 +131,23 @@ compiling main.c...
         u32 tmp1=0;
 ../Src/main.c(3883): warning:  #177-D: variable "D" was declared but never referenced
         u8  D[4];
-../Src/main.c(4155): warning:  #177-D: variable "val" was declared but never referenced
+../Src/main.c(4189): warning:  #177-D: variable "val" was declared but never referenced
         u8 val=0;
-../Src/main.c(4517): warning:  #550-D: variable "a" was set but never used
-    u8 a[64];
-../Src/main.c(4539): warning:  #550-D: variable "a" was set but never used
-    u8 a[64];
-../Src/main.c(4560): warning:  #550-D: variable "a" was set but never used
-    u8 a[64];
-../Src/main.c(4581): warning:  #550-D: variable "a" was set but never used
-    u8 a[64];
-../Src/main.c(4888): warning:  #223-D: function "jtag_scan" declared implicitly
+../Src/main.c(4924): warning:  #223-D: function "jtag_scan" declared implicitly
           tmp0=jtag_scan(NULL,0);
-../Src/main.c(5297): warning:  #223-D: function "RECEIVE_udp" declared implicitly
+../Src/main.c(5333): warning:  #223-D: function "RECEIVE_udp" declared implicitly
    RECEIVE_udp(0, 3001,1); 
-../Src/main.c(915): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
+../Src/main.c(916): warning:  #177-D: function "MX_TIM4_Init" was declared but never referenced
   static void MX_TIM4_Init(void)
-../Src/main.c(547): warning:  #177-D: function "MX_SPI2_Init" was declared but never referenced
+../Src/main.c(548): warning:  #177-D: function "MX_SPI2_Init" was declared but never referenced
   static void MX_SPI2_Init(void)
-../Src/main.c(755): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
+../Src/main.c(756): warning:  #177-D: function "MX_USART6_UART_Init" was declared but never referenced
   static void MX_USART6_UART_Init(void)
-../Src/main.c: 63 warnings, 0 errors
+../Src/main.c: 58 warnings, 0 errors
 linking...
-Program Size: Code=71924 RO-data=2032 RW-data=776 ZI-data=78448  
+Program Size: Code=72088 RO-data=2036 RW-data=776 ZI-data=96368  
 FromELF: creating hex file...
-".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 63 Warning(s).
+".\temp_Pj1\temp_Pj1.axf" - 0 Error(s), 58 Warning(s).
 
 <h2>Software Packages used:</h2>
 
