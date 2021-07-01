@@ -230,15 +230,15 @@ u32 TIME_OF_SECOND=0;         //cчётчик секунд с начала работы
 u32 TIME_OF_WORK=0;           //время наработки блока в десятках минут
 SYS_STATE_BOARD B330;         //структура содержащая состояние блока Б330
 //----------Адреса кассет 072 на бекплейне--------------
-u32 MASTER_IP0     =0x0103063c;
-u32 MASTER_IP1     =0x0103073d;
-u32 MASTER_DEST_IP0=0x01030601;
-u32 MASTER_DEST_IP1=0x01030701;
+u32 MASTER_IP0     =0x0103073d;
+u32 MASTER_IP1     =0x0103063c;
+u32 MASTER_DEST_IP0=0x01030701;
+u32 MASTER_DEST_IP1=0x01030601;
 
-u32 SLAVE_IP0      =0x0103013c;
-u32 SLAVE_IP1      =0x0103023d;
-u32 SLAVE_DEST_IP0 =0x01030101;
-u32 SLAVE_DEST_IP1 =0x01030201;
+u32 SLAVE_IP0      =0x0103023d;
+u32 SLAVE_IP1      =0x0103013c;
+u32 SLAVE_DEST_IP0 =0x01030201;
+u32 SLAVE_DEST_IP1 =0x01030101;
 //------------------------------------------------------
 u8  FLAG_ASQ_TEST_485  =0;    //флаг ответа на запрос теста по 485 шине
 u8  FLAG_ASQ_TEST_JTAG =0;    //флаг ответа на запрос теста по SPI шине
@@ -1662,6 +1662,12 @@ void PRINT_SERV_ID (void)
 			u_out("TIME     :",ID_SERV1.TIME       [i]);			
 		}
 	}		
+}
+
+void SPI_BP_WRITE_1 (u32 adr,u8 dop,u32 data)
+{
+  adr=(adr<<4)|dop;
+  FPGA_wSPI (32,adr,data);
 }
 
 void SPI_BP_WRITE (u32 adr,u32 data)
@@ -3875,6 +3881,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 	u32 tmp0=0;
 	u32 tmp1=0;
 	u8  D[4];
+	int adr_BPL=0;
 
 	for (i=0;i<SIZE_ID;i++)
 	{		
@@ -3980,15 +3987,13 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
 		//----------------------------------------------------------------------------------	
 			data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
-      int adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
-
-			//SETUP_IP0_072 (adr_BPL,data);//выполняем команду
-      SETUP_IP0_072 (ADR_SLAVE[0],data);//выполняем команду
-      Transf("Пришёл IP0 для Мастера 072!\r\n");
-      x_out("отправляем IP адрес:",data);
-      u_out("В блок 072 №",adr_BPL);			
+            adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+			SETUP_IP0_072 (adr_BPL,data);//выполняем команду
+			Transf("Пришёл IP0\r\n");
+			x_out("отправляем IP адрес:",data);
+			u_out("В блок 072 №",adr_BPL);			
 		} else
-      if (id->CMD_TYPE[i]==CMD_SETUP_IP1)//команда установки IP0 адреса определённой кассеты 072 
+      if (id->CMD_TYPE[i]==CMD_SETUP_IP1)//команда установки IP1 адреса определённой кассеты 072 
     {
       FLAG_CMD=1;
       idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
@@ -3999,9 +4004,40 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
     //----------------------------------------------------------------------------------  
       data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
       adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
-
-      SETUP_IP1_072 (ADR_SLAVE[0],data);//выполняем команду
-      Transf("Пришёл IP1 для Мастера 072!\r\n");
+      SETUP_IP1_072 (adr_BPL,data);//выполняем команду
+      Transf("Пришёл IP1\r\n");
+      x_out("отправляем IP адрес:",data);
+      u_out("В блок 072 №",adr_BPL);      
+    } else
+	if (id->CMD_TYPE[i]==CMD_SETUP_DEST_IP0)//команда установки IP0 адреса определённой кассеты 072 
+    {
+      FLAG_CMD=1;
+      idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
+      idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
+      idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+      idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+      idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+    //----------------------------------------------------------------------------------  
+      data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+      adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+      SETUP_DEST_IP0_072 (adr_BPL,data);//выполняем команду
+      Transf("Пришёл dest_IP0\r\n");
+      x_out("отправляем IP адрес:",data);
+      u_out("В блок 072 №",adr_BPL);      
+    } else
+	if (id->CMD_TYPE[i]==CMD_SETUP_DEST_IP1)//команда установки IP1 адреса определённой кассеты 072 
+    {
+      FLAG_CMD=1;
+      idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище" 
+      idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище" //в младшем адресе находятся старшие байты числа!!!
+      idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+      idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+      idx4=idx_srv(id->INDEX[i],4);//индекс расположения данных в "хранилище"
+    //----------------------------------------------------------------------------------  
+      data=((srv->MeM[idx1])<<24)|((srv->MeM[idx2])<<16)|((srv->MeM[idx3])<< 8)|((srv->MeM[idx4]));
+      adr_BPL=srv->MeM[idx0];//адрес 072 на бекплейне
+      SETUP_DEST_IP1_072 (adr_BPL,data);//выполняем команду
+      Transf("Пришёл dest_IP1\r\n");
       x_out("отправляем IP адрес:",data);
       u_out("В блок 072 №",adr_BPL);      
     } else
@@ -4525,7 +4561,7 @@ void SETUP_IP0_072 (u8 adr,u32 ip)
 */   
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
-   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
+   SPI_BP_WRITE_1 (tmp0,4,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_IP1_072 (u8 adr,u32 ip)
@@ -4546,7 +4582,7 @@ void SETUP_IP1_072 (u8 adr,u32 ip)
 */   
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
-   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
+   SPI_BP_WRITE_1 (tmp0,5,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
@@ -4567,7 +4603,7 @@ void SETUP_DEST_IP0_072 (u8 adr,u32 ip)
   */ 
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
-   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
+    SPI_BP_WRITE_1 (tmp0,6,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
@@ -4588,7 +4624,7 @@ void SETUP_DEST_IP1_072 (u8 adr,u32 ip)
  */  
    tmp0=adr;//
    if (tmp0==8) tmp0=0;//поправка для 8-го адресного места на шине бекплейна!
-   SPI_BP_WRITE (tmp0,ip);//посылаем код по адресу ADR_SLAVE[1]
+    SPI_BP_WRITE_1 (tmp0,7,ip);//посылаем код по адресу ADR_SLAVE[1]
 }
 
 void REQ_VERSIYA (void)
@@ -4700,7 +4736,7 @@ void DISPATCHER (u32 timer)
       {
         RESET_072(1);//
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
-        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_ADR_COLLECT,3000);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
       if (FLAG_DWN(&POINTER_RESET_072_0))
