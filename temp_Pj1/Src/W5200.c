@@ -134,7 +134,7 @@ u8 ch_status[MAX_SOCK_NUM] = { 0,0 };	/** 0:close, 1:ready, 2:connected */
 // SRAM address range is 0x2000 0000 ~ 0x2000 4FFF (20KB)
 
 #define RX_MAX_BUF_SIZE	2048
-#define TX_MAX_BUF_SIZE 2048
+#define TX_MAX_BUF_SIZE 8192
 
 uint8 TX_BUF[TX_MAX_BUF_SIZE];
 u32   TX_BUF_LENGTH=0;
