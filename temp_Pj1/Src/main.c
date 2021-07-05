@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // »нтервал обновлени€ индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x010720211508;//номер версии прошивки 12-41 врем€ и 18-06-2021 дата
+u64 STM32_VERSION = 0x050720211443;//номер версии прошивки 12-41 врем€ и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -230,6 +230,7 @@ u32 TIME_OF_SECOND=0;         //cчЄтчик секунд с начала работы
 u32 TIME_OF_WORK=0;           //врем€ наработки блока в дес€тках минут
 SYS_STATE_BOARD B330;         //структура содержаща€ состо€ние блока Ѕ330
 //----------јдреса кассет 072 на бекплейне--------------
+/*
 u32 MASTER_IP0     =0x0103073d;
 u32 MASTER_IP1     =0x0103063c;
 u32 MASTER_DEST_IP0=0x01030701;
@@ -239,6 +240,16 @@ u32 SLAVE_IP0      =0x0103023d;
 u32 SLAVE_IP1      =0x0103013c;
 u32 SLAVE_DEST_IP0 =0x01030201;
 u32 SLAVE_DEST_IP1 =0x01030101;
+*/
+u32 MASTER_IP0     =0xffffffff;
+u32 MASTER_IP1     =0xffffffff;
+u32 MASTER_DEST_IP0=0xffffffff;
+u32 MASTER_DEST_IP1=0xffffffff;
+
+u32 SLAVE_IP0      =0xffffffff;
+u32 SLAVE_IP1      =0xffffffff;
+u32 SLAVE_DEST_IP0 =0xffffffff;
+u32 SLAVE_DEST_IP1 =0xffffffff;
 //------------------------------------------------------
 u8  FLAG_ASQ_TEST_485  =0;    //флаг ответа на запрос теста по 485 шине
 u8  FLAG_ASQ_TEST_JTAG =0;    //флаг ответа на запрос теста по SPI шине
@@ -287,7 +298,7 @@ float TMP_f=0;
 u8 FLAG_CMD=0;
 u8 DAT_REQ[BUF_DATA_SZ];//транспортный массив
 SYS_STATE_072 B072[8];  //массив структур состо€ний 072 блока
-u16 TEMP_MAX=4500;//максимально допустима€ температура 50 град
+u16 TEMP_MAX=5500;//максимально допустима€ температура 50 град
 //-----------------------------------------------------------------------------
 //                           описание структур управлени€ и квитанций
 /* USER CODE END PV */

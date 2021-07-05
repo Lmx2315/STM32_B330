@@ -419,9 +419,12 @@ uint8 Enable_DHCP = OFF;
 u8 NUMBER_BLOK =NB; 
 
 uint8 MAC[6]     ={0x64, 0xA2, 0x32, 0x01, 0x03,NB};//MAC Address
-uint8 IP [4]     ={1, 3,  3,NB+60};//IP Address  
-uint8 GateWay[4] ={1, 3,  3,   1 };// Gateway Address
+uint8 IP [4]     ={1, 3,  3,NB+60};//IP Address         
+uint8 GateWay[4] ={1, 3,  3,   1 };// Gateway Address   
 uint8 SubNet [4] ={255, 255,255,0};//SubnetMask Address
+
+//10,10,7,220
+//10,10,7,219
 
 u16 SERVER_DEST_PORT=49000;//порт удалённого сервера куда шлём UDP
 
