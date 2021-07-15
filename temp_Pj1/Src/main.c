@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x050720211443;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x150720211217;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -3278,10 +3278,10 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
 }
 
 
-#define COL 37
+#define COL 128
 u8 DATA_TR [COL];
 
-void ARR_Z ()
+int ARR_Z (void)
 {
   u8 n=0;
   u32 tmp0=0;
@@ -3329,19 +3329,43 @@ void ARR_Z ()
   DATA_TR[n++]=B330.WORK_TIME>> 8;	//34
   DATA_TR[n++]=B330.WORK_TIME>> 0;  //35
   DATA_TR[n++]=B330.STATUS_OK; 		//36
+  return n;
+}
+
+
+u16 ARR_B072 (void)
+{
+  u16 n=0;
+  u32 tmp0=0;
+  u16 j=0;
+
+for (j=0;j<8;j++)
+	{
+	  DATA_TR[n++]=B072[j].TEMP>>8;	
+	  DATA_TR[n++]=B072[j].TEMP>>0;	
+	  DATA_TR[n++]=B072[j].REF;
+	  DATA_TR[n++]=B072[j].SYNC_1HZ;
+	  DATA_TR[n++]=B072[j].ADC_0;
+	  DATA_TR[n++]=B072[j].ADC_1;
+	  DATA_TR[n++]=B072[j].DAC_0;
+	  DATA_TR[n++]=B072[j].DAC_1;
+	}	
+   
+return n;
 }
 
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 {
 	u32 i=0;
-	u32 idx0=0;
-	u32 idx1=0;
-	u32 idx2=0;
-	u32 idx3=0;
-	u32 idx4=0;
-	u32 idx5=0;
-	u32 idx6=0;
-	u32 idx7=0;
+//	u32 idx0=0;
+//	u32 idx1=0;
+//	u32 idx2=0;
+//	u32 idx3=0;
+//	u32 idx4=0;
+//	u32 idx5=0;
+//	u32 idx6=0;
+//	u32 idx7=0;
+	u16 n=0;
 	
 	u64 ADR=ADRES_SENDER_CMD;
 	u32 data=0;
@@ -3612,12 +3636,12 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 			
 			SYS_CMD_MSG(
 			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH6,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
+			&INVOICE[ADR],//структура квитанций	
+			i,	 		  //индекс в реестре
+			MSG_P_CH6,	  //тип сообщения
+			4,		 	  //объём данных сообщения в байтах
+			D_TEMP,		  //данные сообщения - массив данных
+			TIME_SYS	  //время составления квитанции
 			);
 			
 			ARRAY_DATA(LM7.P);
@@ -3858,22 +3882,41 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 			);
 //----------------------------------
 //квитанция об общем состоянии кассеты Б330
-	ARR_Z ();//заполняем транспортный массив
+	n=ARR_Z ();//заполняем транспортный массив
 
 			SYS_CMD_MSG(
 			id,//реестр
 			&INVOICE[ADR], 	//структура квитанций	
 			i,	 			//индекс в реестре
 			MSG_STATUS_OK,  //тип сообщения
-			COL,		    //объём данных сообщения в байтах
+			n,		    //объём данных сообщения в байтах
 			DATA_TR,  		//данные сообщения - массив данных
 			TIME_SYS	  	//время составления квитанции
 			);
 
 }
 
-int adr_BPL=0;
+void STATE_B072_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
+{
+	u32 i=0;
+	u16 n=0; 
+    u64 ADR=ADRES_SENDER_CMD;
+//---------------------------------
+//квитанция о состоянии ячеек B072
+	n=ARR_B072();//заполняем транспортный массив
+	
+	SYS_CMD_MSG(
+			id,//реестр
+			&INVOICE[ADR], 	//структура квитанций	
+			i,	 			//индекс в реестре
+			MSG_STATE_B072,  //тип сообщения
+			n,		        //объём данных сообщения в байтах
+			DATA_TR,  		//данные сообщения - массив данных
+			TIME_SYS	  	//время составления квитанции
+			);
+}
 
+int adr_BPL=0;
 
 void CMD_search (ID_SERVER *id,SERVER *srv)
 {
@@ -4881,6 +4924,7 @@ void DISPATCHER (u32 timer)
         TIME_cons ();
         Transf("Посылаем код по шине 485!\r\n");
         tmp0=ADR_SLAVE[NUMBER_OF_B072-1];//
+		u_out("REQ_ADR:",tmp0);
         BUS_485_TEST (tmp0);	
         return;
       } else		
@@ -4891,9 +4935,10 @@ void DISPATCHER (u32 timer)
         if (FLAG_ASQ_TEST_485==1) Transf("Тест пройден!\r\n");
 		    else
         {
-          if (SCH_TST1<3)
+          if (SCH_TST1<5)
           {
             SCH_TST1++;
+			u_out("Попытка:",SCH_TST1+1);
             FUNC_FLAG_UP (&POINTER_TEST_485,10);//повтор теста
           } else Transf("Тест не пройден!\r\n");
         }    
@@ -5219,7 +5264,7 @@ void SYS_072_STATE (void)
 {
 	int i=0;
 	int tmp=TEMP_MAX/100;
-			            B072[0]=BP_072_READ (1);//кассета мастер		
+			            B072[0]=BP_072_READ (ADR_SLAVE[0]);//кассета мастер		
   if (NUMBER_OF_B072>1) B072[1]=BP_072_READ (ADR_SLAVE[1]);//кассета слев
   if (NUMBER_OF_B072>2) B072[2]=BP_072_READ (ADR_SLAVE[2]);//кассета слев
   if (NUMBER_OF_B072>3) B072[3]=BP_072_READ (ADR_SLAVE[3]);//кассета слев
@@ -5402,6 +5447,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	{
 		SYS_072_STATE ();//узнаём состояние 072 блоков	
 		SYS_INFO_SEND_UDP(&ID_SERV1,&SERV1);
+		STATE_B072_INFO_SEND_UDP (&ID_SERV1,&SERV1);//сообщаем о состоянии ячеек Б072
 		FLAG_REQ_STATUS=0;
 	}
 
