@@ -1795,7 +1795,8 @@ void RECEIVE_udp(SOCKET s, uint16 port,unsigned char event)
 							      flag_RX_UDP=1;
 							      FLAG_UDP_INSTALL=1;
 							      sch_packet_UDP_reciv=sch_packet_UDP_reciv+1; //счётчик пакетов
-							/* 	  Transf("\r\n");
+								  /*
+								  Transf("\r\n");
 								  Transf("Принял пакет!\r\n");
 								  u_out("port:",destport_UDP);
 								  u_out("IP  :",destip_UDP);

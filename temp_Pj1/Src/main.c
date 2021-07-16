@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x150720211217;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x160720211119;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -219,7 +219,7 @@ u8  LED_OTKL_AC  =0;
 u8  LED_TEMP	 =0;
 u32 TIMER_LED    =0;
 
-LM_struct LM1,LM2,LM3,LM4,LM5,LM6,LM7,LM8;
+LM_struct LM[8];
 
 u8 LM_ID_CN[8];
 u8 D_TEMP[4];
@@ -299,6 +299,8 @@ u8 FLAG_CMD=0;
 u8 DAT_REQ[BUF_DATA_SZ];//транспортный массив
 SYS_STATE_072 B072[8];  //массив структур состояний 072 блока
 u16 TEMP_MAX=5500;//максимально допустимая температура 50 град
+#define COL 512
+u8 DATA_TR [COL];
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -2733,53 +2735,26 @@ u8 LM_MFR_MODEL (u8 z)
 
 void SYS_INFO (u8 a)
 {
+	int i=0;
 	Transf("\r\n");
 	if (a>0)
 	{
-		u_out("LM1.TEMP:",LM1.TEMP);
-		u_out("LM2.TEMP:",LM2.TEMP);
-		u_out("LM3.TEMP:",LM3.TEMP);
-		u_out("LM4.TEMP:",LM4.TEMP);
-		u_out("LM5.TEMP:",LM5.TEMP);
-		u_out("LM6.TEMP:",LM6.TEMP);
-		u_out("LM7.TEMP:",LM7.TEMP);
-		u_out("LM8.TEMP:",LM8.TEMP);
-			Transf("\r\n");
+		for (i=0;i<8;i++) {un_out("LM[",i); u_out("].TEMP:",LM[i].TEMP);}
+		Transf("\r\n");
 	}
 	if (a>1)
 	{
-		u_out("LM1.P:",LM1.P);
-		u_out("LM2.P:",LM2.P);
-		u_out("LM3.P:",LM3.P);
-		u_out("LM4.P:",LM4.P);
-		u_out("LM5.P:",LM5.P);
-		u_out("LM6.P:",LM6.P);
-		u_out("LM7.P:",LM7.P);
-		u_out("LM8.P:",LM8.P);
-			Transf("\r\n");
+		for (i=0;i<8;i++) {un_out("LM[",i); u_out("].P:",LM[i].P);}
+		Transf("\r\n");
 	}
 	if (a>2)
 	{
-		u_out("LM1.I:",LM1.I);
-		u_out("LM2.I:",LM2.I);
-		u_out("LM3.I:",LM3.I);
-		u_out("LM4.I:",LM4.I);
-		u_out("LM5.I:",LM5.I);
-		u_out("LM6.I:",LM6.I);
-		u_out("LM7.I:",LM7.I);
-		u_out("LM8.I:",LM8.I);
+		for (i=0;i<8;i++) {un_out("LM[",i); u_out("].I:",LM[i].I);}
 			Transf("\r\n");
 	}
 	if (a>3)
 	{
-		u_out("LM1.U:",LM1.U);
-		u_out("LM2.U:",LM2.U);
-		u_out("LM3.U:",LM3.U);
-		u_out("LM4.U:",LM4.U);
-		u_out("LM5.U:",LM5.U);
-		u_out("LM6.U:",LM6.U);
-		u_out("LM7.U:",LM7.U);
-		u_out("LM8.U:",LM8.U);
+		for (i=0;i<8;i++) {un_out("LM[",i); u_out("].U:",LM[i].U);}
 			Transf("\r\n");
 	}
 }
@@ -2831,51 +2806,51 @@ u8 LM_MFR_ID (u8 z)
 
   if (z==1) 
   {
-    LM1.ID[0]=a[0];
-    LM1.ID[1]=a[1];
-    LM1.ID[2]=a[2];
+    LM[0].ID[0]=a[0];
+    LM[0].ID[1]=a[1];
+    LM[0].ID[2]=a[2];
   }
   if (z==2) 
   {
-    LM2.ID[0]=a[0];
-    LM2.ID[1]=a[1];
-    LM2.ID[2]=a[2];
+    LM[1].ID[0]=a[0];
+    LM[1].ID[1]=a[1];
+    LM[1].ID[2]=a[2];
   }
   if (z==3) 
   {
-    LM3.ID[0]=a[0];
-    LM3.ID[1]=a[1];
-    LM3.ID[2]=a[2];
+    LM[2].ID[0]=a[0];
+    LM[2].ID[1]=a[1];
+    LM[2].ID[2]=a[2];
   }
   if (z==4) 
   {
-    LM4.ID[0]=a[0];
-    LM4.ID[1]=a[1];
-    LM4.ID[2]=a[2];
+    LM[3].ID[0]=a[0];
+    LM[3].ID[1]=a[1];
+    LM[3].ID[2]=a[2];
   }
   if (z==5) 
   {
-    LM5.ID[0]=a[0];
-    LM5.ID[1]=a[1];
-    LM5.ID[2]=a[2];
+    LM[4].ID[0]=a[0];
+    LM[4].ID[1]=a[1];
+    LM[4].ID[2]=a[2];
   }
   if (z==6) 
   {
-    LM6.ID[0]=a[0];
-    LM6.ID[1]=a[1];
-    LM6.ID[2]=a[2];
+    LM[5].ID[0]=a[0];
+    LM[5].ID[1]=a[1];
+    LM[5].ID[2]=a[2];
   }
   if (z==7) 
   {
-    LM7.ID[0]=a[0];
-    LM7.ID[1]=a[1];
-    LM7.ID[2]=a[2];
+    LM[6].ID[0]=a[0];
+    LM[6].ID[1]=a[1];
+    LM[6].ID[2]=a[2];
   }
   if (z==8) 
   {
-    LM8.ID[0]=a[0];
-    LM8.ID[1]=a[1];
-    LM8.ID[2]=a[2];
+    LM[7].ID[0]=a[0];
+    LM[7].ID[1]=a[1];
+    LM[7].ID[2]=a[2];
   }
 	
 	HAL_I2C_DeInit(&hi2c1);
@@ -3277,10 +3252,6 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
         );
 }
 
-
-#define COL 128
-u8 DATA_TR [COL];
-
 int ARR_Z (void)
 {
   u8 n=0;
@@ -3338,7 +3309,8 @@ u16 ARR_B072 (void)
   u16 n=0;
   u32 tmp0=0;
   u16 j=0;
-
+  
+      DATA_TR[n++]=NUMBER_OF_B072;//сообщаем о количестве обнаруженных ячеек Б072 в АЦ
 for (j=0;j<8;j++)
 	{
 	  DATA_TR[n++]=B072[j].TEMP>>8;	
@@ -3349,7 +3321,61 @@ for (j=0;j<8;j++)
 	  DATA_TR[n++]=B072[j].ADC_1;
 	  DATA_TR[n++]=B072[j].DAC_0;
 	  DATA_TR[n++]=B072[j].DAC_1;
+	  DATA_TR[n++]=B072[j].SYNC0;
+	  DATA_TR[n++]=B072[j].SYNC1;
+	  DATA_TR[n++]=B072[j].ERROR_1HZ>>16;
+	  DATA_TR[n++]=B072[j].ERROR_1HZ>>8;
+	  DATA_TR[n++]=B072[j].ERROR_1HZ;
 	}	
+   
+return n;
+}
+
+u16 ARR_B330 (void)
+{
+  u16 n=0;
+  u32 tmp0=0;
+  u16 j=0;
+  u16 i=0;
+  
+  for (i=0;i<8;i++)
+  {
+	  DATA_TR[n++]=LM[i].TEMP>>24;	
+	  DATA_TR[n++]=LM[i].TEMP>>16;
+      DATA_TR[n++]=LM[i].TEMP>>8;	
+	  DATA_TR[n++]=LM[i].TEMP>>0;
+	  
+	  DATA_TR[n++]=LM[i].P>>24;	
+	  DATA_TR[n++]=LM[i].P>>16;
+      DATA_TR[n++]=LM[i].P>>8;	
+	  DATA_TR[n++]=LM[i].P>>0;
+	  
+	  DATA_TR[n++]=LM[i].I>>24;	
+	  DATA_TR[n++]=LM[i].I>>16;
+      DATA_TR[n++]=LM[i].I>>8;	
+	  DATA_TR[n++]=LM[i].I>>0;
+	  
+	  DATA_TR[n++]=LM[i].U>>24;	
+	  DATA_TR[n++]=LM[i].U>>16;
+      DATA_TR[n++]=LM[i].U>>8;	
+	  DATA_TR[n++]=LM[i].U>>0;
+	  
+	  DATA_TR[n++]=LM[i].P_max>>24;	
+	  DATA_TR[n++]=LM[i].P_max>>16;
+      DATA_TR[n++]=LM[i].P_max>>8;	
+	  DATA_TR[n++]=LM[i].P_max>>0;
+	  
+	  DATA_TR[n++]=LM[i].TEMP_max>>24;	
+	  DATA_TR[n++]=LM[i].TEMP_max>>16;
+      DATA_TR[n++]=LM[i].TEMP_max>>8;	
+	  DATA_TR[n++]=LM[i].TEMP_max>>0;
+	  
+	  DATA_TR[n++]=LM[i].U_min>>24;	
+	  DATA_TR[n++]=LM[i].U_min>>16;
+      DATA_TR[n++]=LM[i].U_min>>8;	
+	  DATA_TR[n++]=LM[i].U_min>>0; 
+	  
+  }	
    
 return n;
 }
@@ -3357,542 +3383,59 @@ return n;
 void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 {
 	u32 i=0;
-//	u32 idx0=0;
-//	u32 idx1=0;
-//	u32 idx2=0;
-//	u32 idx3=0;
-//	u32 idx4=0;
-//	u32 idx5=0;
-//	u32 idx6=0;
-//	u32 idx7=0;
-	u16 n=0;
-	
+	u16 n=0;	
 	u64 ADR=ADRES_SENDER_CMD;
 	u32 data=0;
+	u16 Caunt=0;
 	u8 D[4];
 
 	if (START_BP==1)
 			{
-			//	LM_MFR_ID(1);
-				
-				SYS_CMD_MSG(
-				id,				//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH1,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM1.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(2);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH2,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM2.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(3);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH3,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM3.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(4);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH4,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM4.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(5);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH5,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM5.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				
-			//	LM_MFR_ID(6);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH6,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM6.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(7);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH7,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM7.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			//	LM_MFR_ID(8);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_ID_CH8,		//тип сообщения
-				3,		 		//объём данных сообщения в байтах
-				LM8.ID,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-			}
-			//-----------------------------------
-			if (START_BP==1)
-			{
-				ARRAY_DATA(LM1.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH1,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,			//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM2.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH2,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM3.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH3,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM4.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH4,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM5.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH5,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM6.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH6,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM7.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH7,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-				
-				ARRAY_DATA(LM8.TEMP);
-				
-				SYS_CMD_MSG(
-				id,//реестр
-				&INVOICE[ADR], 	//структура квитанций	
-				i,	 			//индекс в реестре
-				MSG_TEMP_CH8,	//тип сообщения
-				4,		 		//объём данных сообщения в байтах
-				D_TEMP,		//данные сообщения - массив данных
-				TIME_SYS	  	//время составления квитанции
-				);
-			}
-			//-----------------------------------
 			
-			ARRAY_DATA(LM1.P);
 			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH1,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM2.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH2,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM3.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH3,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM4.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH4,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM5.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH5,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM6.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR],//структура квитанций	
-			i,	 		  //индекс в реестре
-			MSG_P_CH6,	  //тип сообщения
-			4,		 	  //объём данных сообщения в байтах
-			D_TEMP,		  //данные сообщения - массив данных
-			TIME_SYS	  //время составления квитанции
-			);
-			
-			ARRAY_DATA(LM7.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH7,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM8.P);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_P_CH8,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			//-----------------------------------
-			
-			ARRAY_DATA(LM1.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH1,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM2.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH2,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM3.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH3,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM4.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH4,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM5.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH5,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM6.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH6,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM7.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH7,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM8.I);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_I_CH8,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			//-----------------------------------
-			
-			ARRAY_DATA(LM1.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH1,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM2.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH2,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM3.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH3,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM4.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH4,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM5.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH5,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM6.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH6,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM7.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH7,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			ARRAY_DATA(LM8.U);
-			
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_U_CH8,	//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-			
-			//-----------------------------------
-			//квитанция о состоянии питания каналов
-			D_TEMP[0]=0;
-			D_TEMP[1]=0;
-			D_TEMP[2]=START_BP;
-			D_TEMP[3]=PWR_CHANNEL;
-	//		u_out("PWR:",PWR_CHANNEL);
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_PWR_CHANNEL,//тип сообщения
-			4,		 		//объём данных сообщения в байтах
-			D_TEMP,    		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
-//----------------------------------
-//квитанция об общем состоянии кассеты Б330
-	n=ARR_Z ();//заполняем транспортный массив
+						Caunt=ARR_B330 ();//формируем массив данных
+						
+						SYS_CMD_MSG(
+						id,//реестр
+						&INVOICE[ADR], //структура квитанций	
+						i,	 		   //индекс в реестре
+						MSG_STATE_B330,//тип сообщения
+						Caunt,		   //объём данных сообщения в байтах
+						DATA_TR,       //данные сообщения - массив данных
+						TIME_SYS  	   //время составления квитанции
+						);
+						
+						//-----------------------------------
+						//квитанция о состоянии питания каналов
+						D_TEMP[0]=0;
+						D_TEMP[1]=0;
+						D_TEMP[2]=START_BP;
+						D_TEMP[3]=PWR_CHANNEL;
+				//		u_out("PWR:",PWR_CHANNEL);
+						SYS_CMD_MSG(
+						id,//реестр
+						&INVOICE[ADR], 	//структура квитанций	
+						i,	 			//индекс в реестре
+						MSG_PWR_CHANNEL,//тип сообщения
+						4,		 		//объём данных сообщения в байтах
+						D_TEMP,    		//данные сообщения - массив данных
+						TIME_SYS	  	//время составления квитанции
+						);
+			//----------------------------------
+			//квитанция об общем состоянии кассеты Б330
+				n=ARR_Z ();//заполняем транспортный массив
 
-			SYS_CMD_MSG(
-			id,//реестр
-			&INVOICE[ADR], 	//структура квитанций	
-			i,	 			//индекс в реестре
-			MSG_STATUS_OK,  //тип сообщения
-			n,		    //объём данных сообщения в байтах
-			DATA_TR,  		//данные сообщения - массив данных
-			TIME_SYS	  	//время составления квитанции
-			);
+						SYS_CMD_MSG(
+						id,//реестр
+						&INVOICE[ADR], 	//структура квитанций	
+						i,	 			//индекс в реестре
+						MSG_STATUS_OK,  //тип сообщения
+						n,		    //объём данных сообщения в байтах
+						DATA_TR,  		//данные сообщения - массив данных
+						TIME_SYS	  	//время составления квитанции
+						);
+			
+			}
 
 }
 
@@ -4179,6 +3722,15 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			TIME_SYS	  	//время составления квитанции
 			);
     }else 
+	if (id->CMD_TYPE[i]==CMD_B072_START)//команда для старта ячеек Б072
+    {
+      FLAG_CMD=1;
+      TIME_cons ();
+      Transf("\r\nПринят приказ на запуск ячеек Б072\r\n");
+      Transf2("~0 b072_start:1;");
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);
+      
+    }else 
        if (id->CMD_TYPE[i]==CMD_RESET_072)//команда проверки сигнала RESET для 072
     {
       FLAG_CMD=1;
@@ -4393,6 +3945,8 @@ int cnvrt (int i,int u)
 void CONTROL_SYS (void)
 {
 	static u8 flag=0;
+	int i=0;
+	int tmp=0;
 	u32 tmp0=0;   
 	
   if ((START_BP==1)&&(TIMER_CONTROL_SYS>SYS_INTERVAL))
@@ -4409,88 +3963,47 @@ void CONTROL_SYS (void)
     LM_MFR_ID(7);
     LM_MFR_ID(8);
     //измерение температуры
-    if (B330.CH[0]==1) LM1.TEMP=LM_TEMP(1); else  LM1.TEMP=20;
-    if (B330.CH[1]==1) LM2.TEMP=LM_TEMP(2); else  LM2.TEMP=20;
-    if (B330.CH[2]==1) LM3.TEMP=LM_TEMP(3); else  LM3.TEMP=20;
-    if (B330.CH[3]==1) LM4.TEMP=LM_TEMP(4); else  LM4.TEMP=20;
-    if (B330.CH[4]==1) LM5.TEMP=LM_TEMP(5); else  LM5.TEMP=20; 
-    if (B330.CH[5]==1) LM6.TEMP=LM_TEMP(6); else  LM6.TEMP=20;
-    if (B330.CH[6]==1) LM7.TEMP=LM_TEMP(7); else  LM7.TEMP=20; 
-    if (B330.CH[7]==1) LM8.TEMP=LM_TEMP(8); else  LM8.TEMP=20;
+    if (B330.CH[0]==1) LM[0].TEMP=LM_TEMP(1); else  LM[0].TEMP=20;
+    if (B330.CH[1]==1) LM[1].TEMP=LM_TEMP(2); else  LM[1].TEMP=20;
+    if (B330.CH[2]==1) LM[2].TEMP=LM_TEMP(3); else  LM[2].TEMP=20;
+    if (B330.CH[3]==1) LM[3].TEMP=LM_TEMP(4); else  LM[3].TEMP=20;
+    if (B330.CH[4]==1) LM[4].TEMP=LM_TEMP(5); else  LM[4].TEMP=20; 
+    if (B330.CH[5]==1) LM[5].TEMP=LM_TEMP(6); else  LM[5].TEMP=20;
+    if (B330.CH[6]==1) LM[6].TEMP=LM_TEMP(7); else  LM[6].TEMP=20; 
+    if (B330.CH[7]==1) LM[7].TEMP=LM_TEMP(8); else  LM[7].TEMP=20;
 
-    if ((LM1.TEMP>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.TEMP;
-    if ((LM2.TEMP>tmp0)&&(B330.CH[1]==1)) tmp0=LM2.TEMP;
-    if ((LM3.TEMP>tmp0)&&(B330.CH[2]==1)) tmp0=LM3.TEMP;
-    if ((LM4.TEMP>tmp0)&&(B330.CH[3]==1)) tmp0=LM4.TEMP;
-    if ((LM5.TEMP>tmp0)&&(B330.CH[4]==1)) tmp0=LM5.TEMP;
-    if ((LM6.TEMP>tmp0)&&(B330.CH[5]==1)) tmp0=LM6.TEMP;
-    if ((LM7.TEMP>tmp0)&&(B330.CH[6]==1)) tmp0=LM7.TEMP;
-    if ((LM8.TEMP>tmp0)&&(B330.CH[7]==1)) tmp0=LM8.TEMP;
+    if ((LM[0].TEMP>tmp0)&&(B330.CH[0]==1)) tmp0=LM[0].TEMP;
+    if ((LM[1].TEMP>tmp0)&&(B330.CH[1]==1)) tmp0=LM[1].TEMP;
+    if ((LM[2].TEMP>tmp0)&&(B330.CH[2]==1)) tmp0=LM[2].TEMP;
+    if ((LM[3].TEMP>tmp0)&&(B330.CH[3]==1)) tmp0=LM[3].TEMP;
+    if ((LM[4].TEMP>tmp0)&&(B330.CH[4]==1)) tmp0=LM[4].TEMP;
+    if ((LM[5].TEMP>tmp0)&&(B330.CH[5]==1)) tmp0=LM[5].TEMP;
+    if ((LM[6].TEMP>tmp0)&&(B330.CH[6]==1)) tmp0=LM[6].TEMP;
+    if ((LM[7].TEMP>tmp0)&&(B330.CH[7]==1)) tmp0=LM[7].TEMP;
 
     B330.TEMP_MAX=tmp0;tmp0=0;//4-ре значащих разряда
     //B330.P = 1000;
     //Измерение потребляемого тока
-    LM1.I=FILTR (LM_in_i(1),LM1.FI,12);
-    LM2.I=FILTR (LM_in_i(2),LM2.FI,12);
-    LM3.I=FILTR (LM_in_i(3),LM3.FI,12);
-    LM4.I=FILTR (LM_in_i(4),LM4.FI,12);
-    LM5.I=FILTR (LM_in_i(5),LM5.FI,12);
-    LM6.I=FILTR (LM_in_i(6),LM6.FI,12);
-    LM7.I=FILTR (LM_in_i(7),LM7.FI,12);
-    LM8.I=FILTR (LM_in_i(8),LM8.FI,12);
-
-    if ((LM1.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.I;
-    if ((LM2.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM2.I;
-    if ((LM3.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM3.I;
-    if ((LM4.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM4.I;
-    if ((LM5.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM5.I;
-    if ((LM6.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM6.I;
-    if ((LM7.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM7.I;
-    if ((LM8.I>tmp0)&&(B330.CH[0]==1)) tmp0=LM8.I;
+	for (i=0;i<8;i++) LM[i].I=FILTR (LM_in_i(i+1),LM[i].FI,12);
+    for (i=0;i<8;i++) if ((LM[i].I>tmp0)&&(B330.CH[i]==1)) tmp0=LM[i].I;
 
     B330.I = tmp0;tmp0=0;//3-три значащих разряда
 
     //Измерение напряжения в каналах
-    LM1.U=FILTR (LM_v(1),LM1.FU,12);
-    LM2.U=FILTR (LM_v(2),LM2.FU,12);
-    LM3.U=FILTR (LM_v(3),LM3.FU,12);
-    LM4.U=FILTR (LM_v(4),LM4.FU,12);
-    LM5.U=FILTR (LM_v(5),LM5.FU,12);
-    LM6.U=FILTR (LM_v(6),LM6.FU,12);
-    LM7.U=FILTR (LM_v(7),LM7.FU,12);
-    LM8.U=FILTR (LM_v(8),LM8.FU,12);
+	for (i=0;i<8;i++) LM[i].U=FILTR (LM_v(i+1),LM[i].FU,12);
 
-        //Измерение потребляемой мощности
-    LM1.P=FILTR (cnvrt (LM1.I,LM1.U),LM1.FP,12);
-    LM2.P=FILTR (cnvrt (LM2.I,LM2.U),LM2.FP,12);
-    LM3.P=FILTR (cnvrt (LM3.I,LM3.U),LM3.FP,12);
-    LM4.P=FILTR (cnvrt (LM4.I,LM4.U),LM4.FP,12);
-    LM5.P=FILTR (cnvrt (LM5.I,LM5.U),LM5.FP,12);
-    LM6.P=FILTR (cnvrt (LM6.I,LM6.U),LM6.FP,12);
-    LM7.P=FILTR (cnvrt (LM7.I,LM7.U),LM7.FP,12);
-    LM8.P=FILTR (cnvrt (LM8.I,LM8.U),LM8.FP,12);
+    //Измерение потребляемой мощности
+	for (i=0;i<8;i++) LM[i].P=FILTR (cnvrt (LM[i].I,LM[i].U),LM[i].FP,12);
 
-    B330.P = LM1.P+LM2.P+LM3.P+LM4.P+LM5.P+LM6.P+LM7.P+LM8.P;//4-ре значащих разряда
+    //4-ре значащих разряда
+	for (i=0;i<8;i++)  tmp+=LM[i].P;
+	B330.P =tmp;
 
-    if ((LM1.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM1.U;
-    if ((LM2.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM2.U;
-    if ((LM3.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM3.U;
-    if ((LM4.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM4.U;
-    if ((LM5.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM5.U;
-    if ((LM6.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM6.U;
-    if ((LM7.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM7.U;
-    if ((LM8.U>tmp0)&&(B330.CH[0]==1)) tmp0=LM8.U;  
+	for (i=0;i<8;i++) if ((LM[i].U>tmp0)&&(B330.CH[i]==1)) tmp0=LM[i].U;
 
     B330.U_max=tmp0;tmp0=100000;//4-ре значащих разряда
 
-    if ((LM1.U<tmp0)&&(B330.CH[0]==1)) tmp0=LM1.U;
-    if ((LM2.U<tmp0)&&(B330.CH[1]==1)) tmp0=LM2.U;
-    if ((LM3.U<tmp0)&&(B330.CH[2]==1)) tmp0=LM3.U;
-    if ((LM4.U<tmp0)&&(B330.CH[3]==1)) tmp0=LM4.U;
-    if ((LM5.U<tmp0)&&(B330.CH[4]==1)) tmp0=LM5.U;
-    if ((LM6.U<tmp0)&&(B330.CH[5]==1)) tmp0=LM6.U;
-    if ((LM7.U<tmp0)&&(B330.CH[6]==1)) tmp0=LM7.U;
-    if ((LM8.U<tmp0)&&(B330.CH[7]==1)) tmp0=LM8.U;   
+    for (i=0;i<8;i++) if ((LM[i].U<tmp0)&&(B330.CH[i]==1)) tmp0=LM[i].U;
 
     B330.U_min=tmp0;tmp0=0; //4-ре значащих разряда
 
@@ -4498,41 +4011,14 @@ void CONTROL_SYS (void)
 	  if ((START_BP==0)&&(flag==1))
   {
 	flag=0;
-  	LM1.TEMP=0xffffffff;
-    LM2.TEMP=0xffffffff;
-    LM3.TEMP=0xffffffff;
-    LM4.TEMP=0xffffffff;
-    LM5.TEMP=0xffffffff;
-    LM6.TEMP=0xffffffff;
-    LM7.TEMP=0xffffffff;
-    LM8.TEMP=0xffffffff;
-	
-  	LM1.U=0;
-    LM2.U=0;
-    LM3.U=0;
-    LM4.U=0;
-    LM5.U=0;
-    LM6.U=0;
-    LM7.U=0;
-    LM8.U=0;
-	
-	LM1.I=0;
-    LM2.I=0;
-    LM3.I=0;
-    LM4.I=0;
-    LM5.I=0;
-    LM6.I=0;
-    LM7.I=0;
-    LM8.I=0;
-	
-  	LM1.P=0;
-    LM2.P=0;
-    LM3.P=0;
-    LM4.P=0;
-    LM5.P=0;
-    LM6.P=0;
-    LM7.P=0;
-    LM8.P=0;
+	for (i=0;i<8;i++) 
+	{
+	 LM[i].TEMP=0xffffffff;
+     LM[i].U=0;
+	 LM[i].I=0;
+	 LM[i].P=0;
+	}
+
   }
   
   u8 err=0;
@@ -4570,14 +4056,15 @@ void ALARM_SYS_TEMP (void)
 {
 	u16 var=0;
 	int tmp=TEMP_MAX/100;
-	if (LM1.TEMP>LM1.TEMP_max) var=var|(1<<0);
-	if (LM2.TEMP>LM2.TEMP_max) var=var|(1<<1);
-	if (LM3.TEMP>LM3.TEMP_max) var=var|(1<<2);
-	if (LM4.TEMP>LM4.TEMP_max) var=var|(1<<3);
-	if (LM5.TEMP>LM5.TEMP_max) var=var|(1<<4);
-	if (LM6.TEMP>LM6.TEMP_max) var=var|(1<<5);
-	if (LM7.TEMP>LM7.TEMP_max) var=var|(1<<6);
-	if (LM8.TEMP>LM8.TEMP_max) var=var|(1<<7);
+	
+	if (LM[0].TEMP>LM[0].TEMP_max) var=var|(1<<0);
+	if (LM[1].TEMP>LM[1].TEMP_max) var=var|(1<<1);
+	if (LM[2].TEMP>LM[2].TEMP_max) var=var|(1<<2);
+	if (LM[3].TEMP>LM[3].TEMP_max) var=var|(1<<3);
+	if (LM[4].TEMP>LM[4].TEMP_max) var=var|(1<<4);
+	if (LM[5].TEMP>LM[5].TEMP_max) var=var|(1<<5);
+	if (LM[6].TEMP>LM[6].TEMP_max) var=var|(1<<6);
+	if (LM[7].TEMP>LM[7].TEMP_max) var=var|(1<<7);
 	
 	if ((B072[0].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<< 8);
 	if ((B072[1].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<< 9);
@@ -4768,12 +4255,18 @@ SYS_STATE_072 BP_072_READ (u8 adr)
       tmp1=SPI_BP64_READ (tmp0);//считываем код из кассеты
 
   tmp2.TEMP     = tmp1     &0xffff;
-  tmp2.REF      =(tmp1>>16)&0xff;
-  tmp2.SYNC_1HZ =(tmp1>>24)&0xff;
-  tmp2.ADC_0    =(tmp1>>32)&0xff;
-  tmp2.ADC_1    =(tmp1>>40)&0xff;
-  tmp2.DAC_0    =(tmp1>>48)&0xff;
-  tmp2.DAC_1    =(tmp1>>56)&0xff;
+  tmp0          =(tmp1>>56)&0xff;
+  
+  tmp2.REF      =(tmp0>>5)&1;
+  tmp2.SYNC_1HZ =(tmp0>>4)&1;
+  tmp2.ADC_0    =(tmp0>>0)&1;
+  tmp2.ADC_1    =(tmp0>>1)&1;
+  tmp2.DAC_0    =(tmp0>>2)&1;
+  tmp2.DAC_1    =(tmp0>>3)&1;
+  
+  tmp2.SYNC0    =(tmp1>>48)&0xff;
+  tmp2.SYNC1    =(tmp1>>40)&0xff;
+  tmp2.ERROR_1HZ=(tmp1>>16)&0xffffff;
   
  /* 
   Transf("-----------\r\n");
@@ -5328,14 +4821,14 @@ int main(void)
 //  Delay(1000);
 	RESET_072(1);
 //------SETUP----------
-LM1.TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
-LM2.TEMP_max=5000;
-LM3.TEMP_max=5000;
-LM4.TEMP_max=5000;
-LM5.TEMP_max=5000;
-LM6.TEMP_max=5000;
-LM7.TEMP_max=5000;
-LM8.TEMP_max=5000;
+LM[0].TEMP_max=5000;//первые два числа десятки и еденицы, вторы два числа десятые и сотые
+LM[1].TEMP_max=5000;
+LM[2].TEMP_max=5000;
+LM[3].TEMP_max=5000;
+LM[4].TEMP_max=5000;
+LM[5].TEMP_max=5000;
+LM[6].TEMP_max=5000;
+LM[7].TEMP_max=5000;
 //---------------------
   
   Transf("-------------\r\n");
