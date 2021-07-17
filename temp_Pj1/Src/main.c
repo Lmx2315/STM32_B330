@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x160720211119;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x170720210958;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -315,6 +315,8 @@ u8 DATA_TR [COL];
 u64 ADRES_SENDER_CMD=0; //тут храним адрес компьютера управления, кто запрашивает у нас квитанции
 u8 FLAG_ADRES_SENDER_CMD=0;//флаг того что есть куда отправлять квитанции
 u8 FLAG_REQ_STATUS=0;
+u8 FLAG_REJ_OSNPAR=0; //флаг работы в режиме измерения основных параметров
+u8 FLAG_ERROR_REJ_OSNPAR=0;//флаг поднимается если в режиме проверки основных параметров ктото включил кассету
 //-----------------------------------------------------------------------------
 //                       JTAG
 #include "jtagtap.h"
@@ -1719,6 +1721,13 @@ void info ()
 
 }
 
+void AVARIYA_OTKL ()
+{
+  PWR_072 (255);
+  START_BP=0;//	
+  FLAG_ERROR_REJ_OSNPAR=1;
+}
+
 void BUS_485_TEST (u8 a)
 {
    u8 u[17];
@@ -2173,6 +2182,7 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
    {
     crc_comp =atoi(DATA_Word); 
     u_out ("принял MSG_ADR:",crc_comp); 
+	if (FLAG_REJ_OSNPAR==1)	AVARIYA_OTKL ();
     //FUNC_FLAG_UP (&POINTER_ADR_COLLECT,100);//ставим отложенную задачу для опроса кассет на бекплейне
    } else
       if (strcmp(Word,"EPCS1_DEV_ID")==0) //only for EPCS128 !!!
@@ -3326,7 +3336,7 @@ for (j=0;j<8;j++)
 	  DATA_TR[n++]=B072[j].ERROR_1HZ>>16;
 	  DATA_TR[n++]=B072[j].ERROR_1HZ>>8;
 	  DATA_TR[n++]=B072[j].ERROR_1HZ;
-	}	
+	}		
    
 return n;
 }
@@ -3388,6 +3398,20 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 	u32 data=0;
 	u16 Caunt=0;
 	u8 D[4];
+	
+	if (FLAG_ERROR_REJ_OSNPAR==1)
+	{
+		FLAG_ERROR_REJ_OSNPAR=0;
+		SYS_CMD_MSG(
+		id,//реестр
+		&INVOICE[ADR], //структура квитанций	
+		i,	 		   //индекс в реестре
+		MSG_ERROR_REJ, //тип сообщения
+		4,		       //объём данных сообщения в байтах
+		D_TEMP,       //данные сообщения - массив данных
+		TIME_SYS  	   //время составления квитанции
+		);
+	}
 
 	if (START_BP==1)
 			{
@@ -3434,6 +3458,7 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 						DATA_TR,  		//данные сообщения - массив данных
 						TIME_SYS	  	//время составления квитанции
 						);
+			
 			
 			}
 
@@ -3607,7 +3632,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       Transf("Пришёл IP1\r\n");
       x_out("отправляем IP адрес:",data);
       u_out("В блок 072 №",adr_BPL);      
-    } else
+    } else 
 	if (id->CMD_TYPE[i]==CMD_SETUP_DEST_IP0)//команда установки IP0 адреса определённой кассеты 072 
     {
       FLAG_CMD=1;
@@ -3639,13 +3664,26 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       Transf("Пришёл dest_IP1\r\n");
       x_out("отправляем IP адрес:",data);
       u_out("В блок 072 №",adr_BPL);      
-    } else
+    } else 
     if (id->CMD_TYPE[i]==CMD_REQ_NUM_SLAVE)//команда запроса о количестве блоков 072 и их адресах 
     {
       FLAG_CMD=1;
       Transf("Запрашиваем кассеты 072 в АЦ на предмет их адресов!\r\n");
   //    req_col();
       FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//ставим отложенную задачу для опроса кассет на бекплейне
+    } else		 
+    if (id->CMD_TYPE[i]==CMD_REJ_OSNPAR)//команда запроса о количестве блоков 072 и их адресах 
+    {
+        FLAG_CMD=1; 
+	    idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
+    	idx1=idx_srv(id->INDEX[i],1);//индекс расположения данных в "хранилище"
+		idx2=idx_srv(id->INDEX[i],2);//индекс расположения данных в "хранилище"
+		idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
+      data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
+	  FLAG_REJ_OSNPAR=data;
+      if (FLAG_REJ_OSNPAR==1) Transf("Включение режима основных парметров!\r\n");
+	  else Transf("Выключение режима основных парметров!\r\n");
+      
     } else
        if (id->CMD_TYPE[i]==CMD_TEST_485)//команда начала теста проверки шины 485
     {
@@ -4075,7 +4113,7 @@ void ALARM_SYS_TEMP (void)
 	if ((B072[6].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<14);
 	if ((B072[7].TEMP>tmp)&&(B072[0].TEMP!=65535)) var=var|(1<<15);
 	
-	if (var!=0) LED_TEMP=2; else LED_TEMP=1; 
+	if ((var!=0)||(NUMBER_OF_B072==0)) LED_TEMP=2; else LED_TEMP=1; 
 }
 
 void UART_CNTR (UART_HandleTypeDef *huart)
@@ -4266,7 +4304,7 @@ SYS_STATE_072 BP_072_READ (u8 adr)
   
   tmp2.SYNC0    =(tmp1>>48)&0xff;
   tmp2.SYNC1    =(tmp1>>40)&0xff;
-  tmp2.ERROR_1HZ=(tmp1>>16)&0xffffff;
+  tmp2.ERROR_1HZ=(tmp1>>16)&0xffffff; 
   
  /* 
   Transf("-----------\r\n");
@@ -4518,7 +4556,7 @@ void DISPATCHER (u32 timer)
       {
 		Transf("Cветодиоды:НОРМА\r\n");
 		LED_ISPRAV_AC=1;
-		LED_PROGR    =2;
+		LED_PROGR    =0;
 		LED_OFCH     =1;
 		LED_SINHR    =1;
 		LED_LS       =2;
@@ -4756,7 +4794,10 @@ u64 SERIAL_NUMBER (void)
 void SYS_072_STATE (void)
 {
 	int i=0;
-	int tmp=TEMP_MAX/100;
+	int error=0;
+	int msg=0;
+	int tmp=TEMP_MAX/100; 
+	
 			            B072[0]=BP_072_READ (ADR_SLAVE[0]);//кассета мастер		
   if (NUMBER_OF_B072>1) B072[1]=BP_072_READ (ADR_SLAVE[1]);//кассета слев
   if (NUMBER_OF_B072>2) B072[2]=BP_072_READ (ADR_SLAVE[2]);//кассета слев
@@ -4767,6 +4808,16 @@ void SYS_072_STATE (void)
   if (NUMBER_OF_B072>7) B072[7]=BP_072_READ (ADR_SLAVE[7]);//кассета слев
   
   if (B072[NUMBER_OF_B072-1].REF==1) LED_OFCH=1; else LED_OFCH=2;
+  
+  for (i=0;i<NUMBER_OF_B072;i++)
+  {
+	  if (B072[i].ADC_0!=1) error++;
+	  if (B072[i].ADC_1!=1) error++;
+	  if (B072[i].DAC_0!=1) error++;
+	  if (B072[i].DAC_1!=1) error++;
+  }
+  
+  if ((error>0)||(NUMBER_OF_B072==0)) LED_ISPRAV_AC=2; else LED_ISPRAV_AC=1;
   
   if (LED_TEMP==2)
   {
@@ -4896,7 +4947,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
   B330.WORK_TIME=TIME_OF_WORK; //время наработки блока в десятках минут;
   
   LED_ISPRAV_AC=1;
-  LED_PROGR    =2;
+  LED_PROGR    =0;
   LED_OFCH     =1;
   LED_SINHR    =1;
   LED_LS       =2;
