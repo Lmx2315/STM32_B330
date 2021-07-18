@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x180720211022;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x180720211708;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -4404,6 +4404,7 @@ void DISPATCHER (u32 timer)
         Transf("Устанавливаем мастер IP0!\r\n");
         SETUP_IP0_072 (1,MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,10);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+		if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
 		MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
         return;
       } else
@@ -4413,6 +4414,8 @@ void DISPATCHER (u32 timer)
         Transf("Устанавливаем слейв IP0!\r\n");
         SETUP_IP0_072 (ADR_SLAVE[NUMBER_OF_B072-1],SLAVE_IP0); //отсылаем IP0 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP (&POINTER_MASTER_IP1_SETUP,10);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+		if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
+		MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
         return;
       } else
       if (FLAG_DWN(&POINTER_MASTER_IP1_SETUP))
@@ -4461,7 +4464,9 @@ void DISPATCHER (u32 timer)
         Transf("Устанавливаем слейв DEST_IP1!\r\n");
         SETUP_DEST_IP1_072 (ADR_SLAVE[NUMBER_OF_B072-1], SLAVE_DEST_IP1);//отсылаем IP1 слейву, он стоит позже по бекплейну
         FUNC_FLAG_UP       (&POINTER_ETHERNET_RERUN,10); //поднимаем флаг следующей задачи - реконфиг мак-ков 072 по ранее установленным IP
-        return;
+        if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
+		MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
+		return;
       } else
       if (FLAG_DWN(&POINTER_ETHERNET_RERUN))
       {
