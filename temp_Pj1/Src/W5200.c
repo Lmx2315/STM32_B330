@@ -2246,10 +2246,10 @@ u32 time	  //время составления квитанции
 											);
 		
 		ID_CMD++;
-//		u_out("Cmd_time:",time);
-//		u_out("Cmd_type:",MSG_TYPE);
-//		u_out("Cmd_id  :",s->CMD_ID[INDEX]);
-//		u_out("Cmd_data:",DATA_MSG);
+	//	u_out("Cmd_time:",time);
+	//	u_out("Cmd_type:",MSG_TYPE);
+	//	u_out("Cmd_id  :",s->CMD_ID[INDEX]);
+
 	
 	} else 
 	{

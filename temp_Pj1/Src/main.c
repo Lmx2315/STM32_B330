@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x170720210958;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x180720211022;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -301,6 +301,8 @@ SYS_STATE_072 B072[8];  //массив структур состояний 072 блока
 u16 TEMP_MAX=5500;//максимально допустимая температура 50 град
 #define COL 512
 u8 DATA_TR [COL];
+
+
 //-----------------------------------------------------------------------------
 //                           описание структур управления и квитанций
 /* USER CODE END PV */
@@ -316,7 +318,8 @@ u64 ADRES_SENDER_CMD=0; //тут храним адрес компьютера управления, кто запрашивае
 u8 FLAG_ADRES_SENDER_CMD=0;//флаг того что есть куда отправлять квитанции
 u8 FLAG_REQ_STATUS=0;
 u8 FLAG_REJ_OSNPAR=0; //флаг работы в режиме измерения основных параметров
-u8 FLAG_ERROR_REJ_OSNPAR=0;//флаг поднимается если в режиме проверки основных параметров ктото включил кассету
+u8 FLAG_ERROR_REJ_OSNPAR=0;//флаг поднимается если в режиме проверки основных параметров кто-то включил кассету
+ERROR_STRUCT ERROR_FLAG;   //вектор АВАРИИ 
 //-----------------------------------------------------------------------------
 //                       JTAG
 #include "jtagtap.h"
@@ -1725,7 +1728,6 @@ void AVARIYA_OTKL ()
 {
   PWR_072 (255);
   START_BP=0;//	
-  FLAG_ERROR_REJ_OSNPAR=1;
 }
 
 void BUS_485_TEST (u8 a)
@@ -2182,8 +2184,15 @@ if (strcmp(Word,"ANS")==0) //пришёл ответ по бекплейну (485) на ранее заданый во
    {
     crc_comp =atoi(DATA_Word); 
     u_out ("принял MSG_ADR:",crc_comp); 
-	if (FLAG_REJ_OSNPAR==1)	AVARIYA_OTKL ();
-    //FUNC_FLAG_UP (&POINTER_ADR_COLLECT,100);//ставим отложенную задачу для опроса кассет на бекплейне
+	FUNC_FLAG_UP (&POINTER_ADR_COLLECT,50);//сбор адресов с устройств на бекплейне
+	if (FLAG_REJ_OSNPAR==1)	
+	{
+		ERROR_FLAG.ALERT=1;//поднимаем флаг аварии во время режима измерения основных параметров
+		ERROR_FLAG.CODE=ERROR_CODE_REJ;
+		ERROR_FLAG.INDEX=crc_comp;
+		FLAG_REJ_OSNPAR=0;//выключаем режим измерения основных параметров
+	}
+
    } else
       if (strcmp(Word,"EPCS1_DEV_ID")==0) //only for EPCS128 !!!
         {
@@ -3254,7 +3263,7 @@ void MSG_SEND_UDP (ID_SERVER *id,SERVER *srv,u32 msg_type)
   SYS_CMD_MSG(
         id,//реестр
         &INVOICE[ADR],  //структура квитанций 
-        i,        //индекс в реестре
+        0,        //индекс в реестре
         msg_type, //тип сообщения
         4,        //объём данных сообщения в байтах
         D_TEMP,   //данные сообщения - массив данных
@@ -3398,20 +3407,6 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 	u32 data=0;
 	u16 Caunt=0;
 	u8 D[4];
-	
-	if (FLAG_ERROR_REJ_OSNPAR==1)
-	{
-		FLAG_ERROR_REJ_OSNPAR=0;
-		SYS_CMD_MSG(
-		id,//реестр
-		&INVOICE[ADR], //структура квитанций	
-		i,	 		   //индекс в реестре
-		MSG_ERROR_REJ, //тип сообщения
-		4,		       //объём данных сообщения в байтах
-		D_TEMP,       //данные сообщения - массив данных
-		TIME_SYS  	   //время составления квитанции
-		);
-	}
 
 	if (START_BP==1)
 			{
@@ -3422,24 +3417,24 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 						SYS_CMD_MSG(
 						id,//реестр
 						&INVOICE[ADR], //структура квитанций	
-						i,	 		   //индекс в реестре
+						0,	 		   //индекс в реестре
 						MSG_STATE_B330,//тип сообщения
 						Caunt,		   //объём данных сообщения в байтах
 						DATA_TR,       //данные сообщения - массив данных
 						TIME_SYS  	   //время составления квитанции
 						);
-						
+					
 						//-----------------------------------
 						//квитанция о состоянии питания каналов
 						D_TEMP[0]=0;
 						D_TEMP[1]=0;
 						D_TEMP[2]=START_BP;
 						D_TEMP[3]=PWR_CHANNEL;
-				//		u_out("PWR:",PWR_CHANNEL);
+						//u_out("PWR:",PWR_CHANNEL);
 						SYS_CMD_MSG(
 						id,//реестр
 						&INVOICE[ADR], 	//структура квитанций	
-						i,	 			//индекс в реестре
+						0,	 			//индекс в реестре
 						MSG_PWR_CHANNEL,//тип сообщения
 						4,		 		//объём данных сообщения в байтах
 						D_TEMP,    		//данные сообщения - массив данных
@@ -3452,7 +3447,7 @@ void SYS_INFO_SEND_UDP (ID_SERVER *id,SERVER *srv)
 						SYS_CMD_MSG(
 						id,//реестр
 						&INVOICE[ADR], 	//структура квитанций	
-						i,	 			//индекс в реестре
+						0,	 			//индекс в реестре
 						MSG_STATUS_OK,  //тип сообщения
 						n,		    //объём данных сообщения в байтах
 						DATA_TR,  		//данные сообщения - массив данных
@@ -3598,7 +3593,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
 			idx3=idx_srv(id->INDEX[i],3);//индекс расположения данных в "хранилище"
 		//----------------------------------------------------------------------------------	
 			data=((srv->MeM[idx0])<<24)|((srv->MeM[idx1])<<16)|((srv->MeM[idx2])<< 8)|((srv->MeM[idx3]));
-			
+			x_out("CH:",data);
 			PWR_072 (data);//выполняем команду
 		} else
 		if (id->CMD_TYPE[i]==CMD_SETUP_IP0)//команда установки IP0 адреса определённой кассеты 072 
@@ -4022,13 +4017,31 @@ void CONTROL_SYS (void)
     B330.TEMP_MAX=tmp0;tmp0=0;//4-ре значащих разряда
     //B330.P = 1000;
     //Измерение потребляемого тока
-	for (i=0;i<8;i++) LM[i].I=FILTR (LM_in_i(i+1),LM[i].FI,12);
-    for (i=0;i<8;i++) if ((LM[i].I>tmp0)&&(B330.CH[i]==1)) tmp0=LM[i].I;
+	for (i=0;i<8;i++) 
+	{
+		LM[i].I=FILTR (LM_in_i(i+1),LM[i].FI,12);
+		
+		if (LM[i].I==0xffffffff) LM[i].I=0;
+			
+		if (LM[i].I>LM[i].I_max) 
+		{
+			ERROR_FLAG.ALERT=1;//если есть превышение по току поднимаем флаг аварии тока
+			ERROR_FLAG.INDEX=i;
+			ERROR_FLAG.CODE = ERROR_CODE_Imax;//аварийный код - превышение тока в канале
+			LM[i].ERROR=1; //поднимаем флаг аварии этого канала
+		}
+	}	
+	
+    for (i=0;i<8;i++) if ((LM[i].I>tmp0)&&(B330.CH[i]==1)) tmp0=LM[i].I;//ищем максимальный ток в блоке
 
     B330.I = tmp0;tmp0=0;//3-три значащих разряда
 
     //Измерение напряжения в каналах
-	for (i=0;i<8;i++) LM[i].U=FILTR (LM_v(i+1),LM[i].FU,12);
+	for (i=0;i<8;i++) 
+	{
+		LM[i].U=FILTR (LM_v(i+1),LM[i].FU,12);
+		if (LM[i].U==0xffffffff) LM[i].U=0;
+	}
 
     //Измерение потребляемой мощности
 	for (i=0;i<8;i++) LM[i].P=FILTR (cnvrt (LM[i].I,LM[i].U),LM[i].FP,12);
@@ -4819,7 +4832,7 @@ void SYS_072_STATE (void)
   
   if ((error>0)||(NUMBER_OF_B072==0)) LED_ISPRAV_AC=2; else LED_ISPRAV_AC=1;
   
-  if (LED_TEMP==2)
+  if ((LED_TEMP==2)&&(NUMBER_OF_B072!=0))
   {
 	  for (i=0;i<8;i++) 
 		  if (B072[i].TEMP>tmp) 
@@ -4827,6 +4840,33 @@ void SYS_072_STATE (void)
 			nu_out("B072[",i); u_out("]:",B072[i].TEMP);
 		  }
   }
+}
+
+void ALARM_SYSTEM (ID_SERVER *id,SERVER *srv)//контроль за аварийным состоянием
+{
+	int i=0;
+    u64 ADR=ADRES_SENDER_CMD;	
+	
+	if (ERROR_FLAG.ALERT==1) //проверка флага аварии
+	{
+		AVARIYA_OTKL ();
+		ERROR_FLAG.ALERT=0;
+		
+		D_TEMP[0]=0;
+		D_TEMP[1]=0;
+		D_TEMP[2]=ERROR_FLAG.INDEX;//отправляем номер канала где была авария
+		D_TEMP[3]=ERROR_FLAG.CODE; //отправляем код аварии
+		
+			SYS_CMD_MSG(
+			id,//реестр
+			&INVOICE[ADR], //структура квитанций	
+			0,	 		   //индекс в реестре
+			MSG_ERROR_REJ, //тип сообщения
+			4,		       //объём данных сообщения в байтах
+			D_TEMP,        //данные сообщения - массив данных
+			TIME_SYS  	   //время составления квитанции
+			);
+	}
 }
 
 int main(void)
@@ -4880,6 +4920,16 @@ LM[4].TEMP_max=5000;
 LM[5].TEMP_max=5000;
 LM[6].TEMP_max=5000;
 LM[7].TEMP_max=5000;
+
+LM[0].I_max=499;//4.99 Ампер
+LM[1].I_max=499;
+LM[2].I_max=499;
+LM[3].I_max=499;
+LM[4].I_max=499;
+LM[5].I_max=499;
+LM[6].I_max=499;
+LM[7].I_max=499;
+
 //---------------------
   
   Transf("-------------\r\n");
@@ -4997,6 +5047,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 
     DISPATCHER          (TIMER_TIMEOUT);//выполняет отложенные задачи
 	ALARM_SYS_TEMP      ();//сравниваем измеренную температуру с пороговым значением  
+	ALARM_SYSTEM        (&ID_SERV1,&SERV1);//контроль за аврийным состоянием
     CONTROL_SYS         ();//проверяем параметры системы: температуру , ток потребление и т.д.
 	CONTROL_POK 	    ();
 	LED_CONTROL 	    ();
