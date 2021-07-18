@@ -4356,7 +4356,7 @@ void DISPATCHER (u32 timer)
         RESET_072(0);//устанавливаем сигнал RESET на шину бекплейна
 		NUMBER_OF_B072=0;//сбрасываем счётчик числа блоков
 		FLAG_ASQ_TEST_RESET=0;
-        FUNC_FLAG_UP (&POINTER_RESET_072_1,100);//поднимаем флаг следующей задачи - снятие сигнала RESET
+        FUNC_FLAG_UP (&POINTER_RESET_072_1,10);//поднимаем флаг следующей задачи - снятие сигнала RESET
         return;
       } else
 	  if (FLAG_DWN(&POINTER_RESET_072_1))
@@ -4371,6 +4371,7 @@ void DISPATCHER (u32 timer)
       {
         TIME_cons ();
         Transf("Проверка сигнала RESET для 072.\r\n");
+		if (NUMBER_OF_B072==0) NUMBER_OF_B072=FUNC_FIND_072 ();
 		u_out("Количество блоков 072 на бекплейне:",NUMBER_OF_B072);
         if (NUMBER_OF_B072>0) FLAG_ASQ_TEST_RESET=1;//тест пройден успешно
 		else FLAG_ASQ_TEST_RESET=0;
@@ -4403,6 +4404,7 @@ void DISPATCHER (u32 timer)
         Transf("Устанавливаем мастер IP0!\r\n");
         SETUP_IP0_072 (1,MASTER_IP0);//отсылаем IP0 мастеру , он всегда стоит раньше всех на бекплейне
         FUNC_FLAG_UP (&POINTER_SLAVE_IP0_SETUP,10);     //поднимаем флаг следующей задачи - установка блокам 072 IP1 адресов
+		MSG_SEND_UDP (&ID_SERV1,&SERV1,MSG_REQ_TEST_RESET);//готовим квитанцию серверу по результатам теста сигнала RESET
         return;
       } else
        if (FLAG_DWN(&POINTER_SLAVE_IP0_SETUP))
@@ -4606,10 +4608,26 @@ void FUNC_TEST_FIND (void)
 				ERROR_FLAG.CODE=ERROR_CODE_REJ;
 				FLAG_REJ_OSNPAR=0;
 			}
+		}		
+	}	
+}
+
+//функция подсчитывает количество блоков на бекплейне
+int FUNC_FIND_072 (void)
+{
+	int i=0;
+	int n=0;
+	u32 tmp=0;
+
+		for (i=0;i<8;i++)
+		{
+			tmp=SPI_BP_READ_TEST (i);//считываем код из кассеты
+			if (tmp==0xDEEDBEEF) 
+			{
+				n++;
+			}
 		}
-		
-	}
-	
+		return n;
 }
 
 //эта процедура поднимает переданный ей флаг и устанавливает таймаут на заданое время
