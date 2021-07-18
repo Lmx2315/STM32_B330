@@ -285,6 +285,7 @@ POINTER  POINTER_LED_TEST1;            // 21
 POINTER  POINTER_LED_TEST2;            // 22
 POINTER  POINTER_LED_TEST3;            // 23    
 POINTER  POINTER_RESET;                // 24  
+POINTER  POINTER_START_072;            // 25 
 
 u8  ADR_SLAVE [8];          //тут храним адреса кассет из блока АЦ
 u8  NUMBER_OF_B072;         //число блоков Б072 на бекплейне
@@ -3667,7 +3668,7 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
   //    req_col();
       FUNC_FLAG_UP (&POINTER_ADR_COLLECT,1000);//ставим отложенную задачу для опроса кассет на бекплейне
     } else		 
-    if (id->CMD_TYPE[i]==CMD_REJ_OSNPAR)//команда запроса о количестве блоков 072 и их адресах 
+    if (id->CMD_TYPE[i]==CMD_REJ_OSNPAR)//команда перевода в режим проверки основных параметров
     {
         FLAG_CMD=1; 
 	    idx0=idx_srv(id->INDEX[i],0);//индекс расположения данных в "хранилище"
@@ -3760,9 +3761,9 @@ void CMD_search (ID_SERVER *id,SERVER *srv)
       FLAG_CMD=1;
       TIME_cons ();
       Transf("\r\nПринят приказ на запуск ячеек Б072\r\n");
-      Transf2("~0 b072_start:1;");
-      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);
-      
+      Transf2("~0 b072_start:1;");	  
+	  FUNC_FLAG_UP (&POINTER_START_072,100);//ставим отложенную задачу 
+      ADR=ADR_FINDER(id->SENDER_ID[i],&ADDR_SNDR);      
     }else 
        if (id->CMD_TYPE[i]==CMD_RESET_072)//команда проверки сигнала RESET для 072
     {
@@ -4336,6 +4337,11 @@ void DISPATCHER (u32 timer)
 	u32 tmp0=0;
 	int i=0;
 
+	  if (FLAG_DWN(&POINTER_START_072)) //запускаем все 072 кассеты
+      {	
+		Transf2("~0 b072_start:1;");
+        return;
+      } else
 	  if (FLAG_DWN(&POINTER_RESET)) //снимаем ресет
       {
         RESET_072(1);//
@@ -4492,7 +4498,7 @@ void DISPATCHER (u32 timer)
       } else
        if (FLAG_DWN(&POINTER_TEST_SPI))
       {
-		    FUNC_FLAG_UP (&POINTER_TEST_SPI_REQ,10);//ставим отложенную задачу для проверки наличия ответа на тест 485
+		    FUNC_FLAG_UP (&POINTER_TEST_SPI_REQ,10);//ставим отложенную задачу для проверки наличия ответа на тест SPI
         TIME_cons ();
         Transf("Посылаем код по шине SPI!\r\n");
         FLAG_ASQ_TEST_SPI=0;
@@ -4578,9 +4584,33 @@ void DISPATCHER (u32 timer)
 		LED_TEMP	 =1;
 		FLAG_LED_TEST=0;
         return;
-      } 		  
+      }   
 
   }
+
+//эта процедура опрашивает ячейки на бекплейне чтобы определять их наличие
+void FUNC_TEST_FIND (void)
+{
+	int i=0;
+	u32 tmp=0;
+	if (FLAG_REJ_OSNPAR==1)
+	{
+		for (i=0;i<8;i++)
+		{
+			tmp=SPI_BP_READ_TEST (i);//считываем код из кассеты
+			if (tmp==0xDEEDBEEF) 
+			{
+				u_out("Найдена ячейка:",i);
+				ERROR_FLAG.ALERT=1;
+				ERROR_FLAG.INDEX=i-1;
+				ERROR_FLAG.CODE=ERROR_CODE_REJ;
+				FLAG_REJ_OSNPAR=0;
+			}
+		}
+		
+	}
+	
+}
 
 //эта процедура поднимает переданный ей флаг и устанавливает таймаут на заданое время
 void FUNC_FLAG_UP (POINTER *p,u32 time)
@@ -5058,6 +5088,7 @@ HAL_ADC_Start_DMA  (&hadc1,(uint32_t*)&adcBuffer,5); // Start ADC in DMA
 	UART_DMA_TX2  	    ();
 	UART_CNTR           (&huart2);//тут управляем драйвером 485
 	FTIME_OF_WORK       ();     //тут следим за временем наработки
+	FUNC_TEST_FIND      ();//Работает в режиме измерения основных параметров! процедура опрашивает ячейки на бекплейне чтобы определить их наличие
 
   }
 

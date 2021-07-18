@@ -689,6 +689,7 @@ void SETUP_DEST_IP1_072 (u8,u32);
 u64 SERIAL_NUMBER (void);
 u16 ARR_B330 (void);
 void ALARM_SYSTEM (ID_SERVER *,SERVER *);
+void FUNC_TEST_FIND (void);
 //-------------JTAG--------------
 void JTAG_SCAN (void);
   u8 SCAN_N    (void);
