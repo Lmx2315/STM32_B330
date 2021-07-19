@@ -71,7 +71,7 @@ TIM_OC_InitTypeDef sConfigOC = {0};
 #define LED_INTERVAL 500  		 // Интервал обновления индикации светодиодов
 #define SYS_INTERVAL 250
 
-u64 STM32_VERSION = 0x180720211708;//номер версии прошивки 12-41 время и 18-06-2021 дата
+u64 STM32_VERSION = 0x190720211536;//номер версии прошивки 12-41 время и 18-06-2021 дата
 u32 IP_my=0;
 u16 PORT_my=0;
 
@@ -4075,10 +4075,10 @@ void CONTROL_SYS (void)
   
   u8 err=0;
   if  (B330.TEMP_MAX>TEMP_MAX) err++;
-  if ((B330.I    >2500)&&(B330.I    !=4294967295))    err++;
+  if ((B330.I    >500)&&(B330.I    !=4294967295))    err++;
   if  (B330.U_min<1100)    err++;
   if ((B330.U_max>1250)&&(B330.U_max!=4294967295))    err++;
-  if  (B330.P    >30000)   err++;
+  if  (B330.P    >40000)   err++;
   if  (B330.FLAG_1HZ==0)   err++;
   
  /*
